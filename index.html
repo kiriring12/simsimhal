@@ -46,8 +46,8 @@
 <body>
 
   <div class="card">
-    <h1>Summer</h1>
-    <p>1 ~ 101 마디 완곡 (Left Channel Panned)</p>
+    <h1>Summer (Left Hand)</h1>
+    <p>1 ~ 101 마디 완곡</p>
     
     <div class="controls">
       <button id="playBtn" class="btn">▶ 연주 시작</button>
@@ -58,7 +58,7 @@
       </div>
     </div>
     
-    <div id="status" class="status">🎧 이어폰 착용 권장 (왼쪽 귀 집중)</div>
+    <div id="status" class="status">🎧 이어폰 착용 권장 (왼쪽 귀 전용)</div>
   </div>
 
   <script>
@@ -66,7 +66,7 @@
     const leftPanner = new Tone.Panner(-1).toDestination();
     const reverb = new Tone.Reverb({ decay: 2.0, wet: 0.2 }).connect(leftPanner);
     
-    // 피아노 신시사이저 (왼쪽 Panner로 연결)
+    // 동시 화음 연주를 위한 PolySynth
     const synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
       envelope: { attack: 0.01, decay: 0.35, sustain: 0.25, release: 1.0 }
@@ -74,7 +74,7 @@
 
     Tone.Destination.volume.value = -4;
 
-    // 2. 고정 반주 생성용 유틸리티 함수
+    // 2. 고정 반주 생성용 함수
     function buildPattern(measures, defaultDuration = "4", isStaccato = true) {
       let result = [];
       measures.forEach(m => {
@@ -85,65 +85,48 @@
       return result.join(' // ');
     }
 
-    // --- 커스텀 악보 데이터 구성 (1 ~ 101 마디 완곡) ---
-
-    // 패턴 A (B2 / F#3 / B3 / F#3 // G2 / D3 / G3 / D3 // A2 / E3 / A3 / E3 // D2 / A2 / D3 / A2)
+    // --- 악보 데이터 세그먼트 ---
     const patternA_Measures = [
       "B2 / F#3 / B3 / F#3", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "D2 / A2 / D3 / A2"
     ];
 
-    // 패턴 B (A2 / E3 / A3 / E3 // G2 / D3 / G3 / D3 // F#2 / C#3 / A3 / C#3 ...)
     const patternB_Measures = [
       "A2 / E3 / A3 / E3", "G2 / D3 / G3 / D3", "F#2 / C#3 / A3 / C#3", "B2 / F#3 / B3 / F#3",
       "E2 / B2 / E3 / B2", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "A2 / E3 / A3 / E3"
     ];
 
-    // 1~16마디 (패턴 A x 4회)
     let m_1_16 = [];
     for(let i=0; i<4; i++) m_1_16.push(buildPattern(patternA_Measures));
     const sec_1_16 = m_1_16.join(' // ');
 
-    // 17~24마디 (패턴 B)
     const sec_17_24 = buildPattern(patternB_Measures);
 
-    // 25~32마디 (패턴 A x 2회)
     let m_25_32 = [];
     for(let i=0; i<2; i++) m_25_32.push(buildPattern(patternA_Measures));
     const sec_25_32 = m_25_32.join(' // ');
 
-    // 33~34마디
     const sec_33_34 = "E2(4) / B2(4) / E3(4) / B2(4) // A2(1)";
 
-    // 35~42마디
     const sec_35_42 = "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4) // D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
 
-    // 43~71마디
+    // 화음(&)이 다수 들어간 43~71마디
     const sec_43_71 = "A3&F#3&D3(2) / A3&F#3&D3(2) // A3&G3&E3(2) / A3&G3&E3(2) // A3&F#3(2) / A3&F#3(2) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) // A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) // A3&F#3(4) / A3&F#3(4) / A3&F#3(4) / A3&F#3(4) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // D4&B3&G3(2) / D4&B3&G3(2) // D4&C4&A4(2) / D4&C4&A3(2) // D4&B3(2) // D4&B3(2) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) // D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) // D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // A2&A1(2) / C4&A3&E3(2) // G2&G1(2) / D4&B3&G3(2) // F#2&F#1(2) / E4&C4&F#3(2) // B2&B1(2) / D4&B3&F#3(2) // E2&E1(2) / D4&B3&G#3(2) // G2&G1(2) / D4&B3&G3(2) // A2&A1(2) / E4&A3&G3(2) // A2&A1(2) / C#4&A3&G3(2)";
 
-    // 72~79마디 (패턴 A x 2회)
     let m_72_79 = [];
     for(let i=0; i<2; i++) m_72_79.push(buildPattern(patternA_Measures));
     const sec_72_79 = m_72_79.join(' // ');
 
-    // 80~84마디
     const sec_80_84 = buildPattern(patternB_Measures.slice(0, 4));
-
-    // 85~86마디
     const sec_85_86 = sec_33_34;
-
-    // 87~98마디
     const sec_87_98 = sec_35_42 + " // " + "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
-
-    // 99~101마디
     const sec_99_101 = "D3(4) / A3(4) / D4(2) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D3&D2(1)";
 
-    // 전체 악보 텍스트 결합
     const fullScoreText = [
       sec_1_16, sec_17_24, sec_25_32, sec_33_34, sec_35_42,
       sec_43_71, sec_72_79, sec_80_84, sec_85_86, sec_87_98, sec_99_101
     ].join(' // ');
 
-    // --- 커스텀 악보 파서 엔진 ---
+    // --- 화음(&) 파싱 처리 엔진 ---
     function parseCustomScore(scoreText) {
       const measures = scoreText.split('//');
       let events = [];
@@ -151,7 +134,7 @@
 
       measures.forEach(mText => {
         const notesRaw = mText.split('/');
-        let currentBeatInMeasure = 0; // 마디 내 박자 누적 (4분음표 1.0 기준)
+        let currentBeatInMeasure = 0; // 마디 내 박자 (4분음표 1.0 기준)
 
         notesRaw.forEach(nRaw => {
           let str = nRaw.trim();
@@ -163,7 +146,7 @@
             str = str.substring(1).trim();
           }
 
-          // 음계와 박자 괄호 분리
+          // 음계와 괄호 속성 추출
           const match = str.match(/^([^\(]+)\(([^\)]+)\)$/);
           if (!match) return;
 
@@ -173,39 +156,37 @@
           const durationVal = attrs[0]; // 1, 2, 4, 8
           const isStaccato = attrs.includes('Staccato');
 
-          // 박자 변환
-          let durUnits = 1.0; // 4분음표 기준 박자 단위
+          // 박자 단위 계산
+          let durUnits = 1.0;
           if (durationVal === '1') durUnits = 4.0;
           if (durationVal === '2') durUnits = 2.0;
           if (durationVal === '4') durUnits = 1.0;
           if (durationVal === '8') durUnits = 0.5;
 
-          // Tone.js 위치 계산 (마디 : 쿼터비트 : 16분비트)
+          // 시간 좌표 (마디:비트:16분위치)
           const beatInt = Math.floor(currentBeatInMeasure);
           const beatRem = currentBeatInMeasure - beatInt;
           const sixteenth = Math.round(beatRem * 4);
           const timePosition = `${currentMeasure}:${beatInt}:${sixteenth}`;
 
-          // 음표 지정 (& 처리)
+          // [핵심] &로 묶인 음계들을 배열로 추출 (화음 구성)
           let noteArray = [];
-          if (noteNameRaw.startsWith('^')) {
-            // 쉼표 처리
-            noteArray = [];
-          } else {
+          if (!noteNameRaw.startsWith('^')) {
             noteArray = noteNameRaw.split('&').map(s => s.trim());
           }
 
-          // 연주 지속시간 (스타카토는 원래 길이의 50%)
-          let playDuration = durUnits * 0.5; // 기본 8n급
+          // 음표 길이
+          let playDuration = "4n";
           if (durationVal === '1') playDuration = "1m";
           else if (durationVal === '2') playDuration = isStaccato ? "4n" : "2n";
           else if (durationVal === '4') playDuration = isStaccato ? "8n" : "4n";
           else if (durationVal === '8') playDuration = isStaccato ? "16n" : "8n";
 
+          // 붙임줄(~)이 아닌 경우 타임라인 이벤트 등록
           if (noteArray.length > 0 && !isTied) {
             events.push({
               time: timePosition,
-              notes: noteArray,
+              notes: noteArray, // 배열 형태로 전달하여 화음 동시 출력
               duration: playDuration
             });
           }
@@ -221,15 +202,14 @@
 
     const parsedEvents = parseCustomScore(fullScoreText);
 
-    // Tone.Part 등록
+    // Tone.Part 등록 (notes 배열을 그대로 triggerAttackRelease에 전달하여 동시 연주)
     const part = new Tone.Part((time, event) => {
       synth.triggerAttackRelease(event.notes, event.duration, time, 0.7);
     }, parsedEvents);
 
     part.loop = false;
-    Tone.Transport.bpm.value = 112; // Summer 원곡 템포
+    Tone.Transport.bpm.value = 112;
 
-    // 컨트롤 및 제어
     let isPlaying = false;
     const playBtn = document.getElementById("playBtn");
     const volumeSlider = document.getElementById("volumeSlider");
