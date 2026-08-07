@@ -47,7 +47,7 @@
 
   <div class="card">
     <h1>Summer</h1>
-    <p>Joe Hisaishi.</p>
+    <p>Joe Hisaishi</p>
     
     <div class="controls">
       <button id="playBtn" class="btn">▶ 연주 시작</button>
@@ -65,7 +65,6 @@
   </div>
 
   <script>
-    // 울림(공간감) 이펙트
     const reverb = new Tone.Reverb({ decay: 2.2, wet: 0.25 }).toDestination();
     
     const synth = new Tone.PolySynth(Tone.Synth, {
@@ -75,10 +74,36 @@
 
     Tone.Destination.volume.value = -4;
 
-    // 오른손 (D 메이저 키)
-    // 인트로(1~4마디) 피치카토 느낌의 오프닝 후 5마디부터 멜로디 진입
+    // [왼손] (시-파#-시-파# / 솔-레-솔-레 / 라-미-라-미 / 레-라-레-라)
+    function createPinkPianoArpeggio(m, type) {
+      const beats = ["0:0", "1:0", "2:0", "3:0"];
+      let notes = [];
+      if (type === 'Bm') notes = ["B2", "F#3", "B3", "F#3"];
+      if (type === 'G')  notes = ["G2", "D3", "G3", "D3"];
+      if (type === 'A')  notes = ["A2", "E3", "A3", "E3"];
+      if (type === 'D')  notes = ["D2", "A2", "D3", "A2"];
+
+      return beats.map((b, i) => ({
+        time: `${m}:${b}`,
+        note: notes[i],
+        duration: "4n"
+      }));
+    }
+
+    // 20마디 분량의 왼손 고정 패턴 자동 생성
+    const leftHand = [];
+    for (let m = 0; m < 20; m += 4) {
+      leftHand.push(
+        ...createPinkPianoArpeggio(m, 'Bm'),
+        ...createPinkPianoArpeggio(m + 1, 'G'),
+        ...createPinkPianoArpeggio(m + 2, 'A'),
+        ...createPinkPianoArpeggio(m + 3, 'D')
+      );
+    }
+
+    // [오른손] 멜로디
     const rightHand = [
-      // 인트로 3음 튀김 패턴 (F#5 - G5 - A5 / F#5 - G5 - A5 ...)
+      // --- Intro 오프닝 (1~4마디) ---
       { time: "0:0:0", note: "F#5", duration: "16n" }, { time: "0:0:1", note: "G5", duration: "16n" }, { time: "0:0:2", note: "A5", duration: "8n" },
       { time: "0:1:0", note: "F#5", duration: "16n" }, { time: "0:1:1", note: "G5", duration: "16n" }, { time: "0:1:2", note: "A5", duration: "8n" },
       { time: "0:2:0", note: "F#5", duration: "16n" }, { time: "0:2:1", note: "G5", duration: "16n" }, { time: "0:2:2", note: "A5", duration: "8n" },
@@ -89,8 +114,7 @@
       { time: "1:2:0", note: "F#5", duration: "16n" }, { time: "1:2:1", note: "G5", duration: "16n" }, { time: "1:2:2", note: "A5", duration: "8n" },
       { time: "1:3:0", note: "F#5", duration: "16n" }, { time: "1:3:1", note: "G5", duration: "16n" }, { time: "1:3:2", note: "A5", duration: "8n" },
 
-      // 메인 테마 멜로디 
-      // 5마디: (라) - 레 - 미 - 파# - 미 - 레 - 미
+      // --- 메인 테마 1차 (5~8마디) ---
       { time: "4:0:0", note: "A4", duration: "8n" },
       { time: "4:0:2", note: "D5", duration: "8n" },
       { time: "4:1:0", note: "E5", duration: "8n" },
@@ -99,15 +123,13 @@
       { time: "4:2:2", note: "D5", duration: "8n" },
       { time: "4:3:0", note: "E5", duration: "4n" },
 
-      // 6마디: 파# - 파# - 파# - 미 - 레 - 미
-      { time: "5:0:0", note: "F#5", duration: "8n." },
+      { time: "5:0:0", note: "F#5", duration: "4n" },
       { time: "5:1:0", note: "F#5", duration: "8n" },
       { time: "5:1:2", note: "F#5", duration: "8n" },
       { time: "5:2:0", note: "E5", duration: "8n" },
       { time: "5:2:2", note: "D5", duration: "8n" },
       { time: "5:3:0", note: "E5", duration: "4n" },
 
-      // 7마디: 레 - 미 - 파# - 미 - 레 - 시 - 라
       { time: "6:0:0", note: "D5", duration: "8n" },
       { time: "6:0:2", note: "E5", duration: "8n" },
       { time: "6:1:0", note: "F#5", duration: "8n" },
@@ -116,13 +138,12 @@
       { time: "6:2:2", note: "B4", duration: "8n" },
       { time: "6:3:0", note: "A4", duration: "4n" },
 
-      // 8마디: (라) - 레 - 미 - 파#
       { time: "7:0:0", note: "A4", duration: "8n" },
       { time: "7:0:2", note: "D5", duration: "8n" },
       { time: "7:1:0", note: "E5", duration: "8n" },
       { time: "7:1:2", note: "F#5", duration: "2n" },
 
-      // 9~12마디 반복 테마
+      // --- 메인 테마 2차 변형 (9~12마디) ---
       { time: "8:0:0", note: "A4", duration: "8n" },
       { time: "8:0:2", note: "D5", duration: "8n" },
       { time: "8:1:0", note: "E5", duration: "8n" },
@@ -131,7 +152,7 @@
       { time: "8:2:2", note: "D5", duration: "8n" },
       { time: "8:3:0", note: "E5", duration: "4n" },
 
-      { time: "9:0:0", note: "F#5", duration: "8n." },
+      { time: "9:0:0", note: "F#5", duration: "4n" },
       { time: "9:1:0", note: "F#5", duration: "8n" },
       { time: "9:1:2", note: "F#5", duration: "8n" },
       { time: "9:2:0", note: "E5", duration: "8n" },
@@ -146,29 +167,58 @@
       { time: "10:2:2", note: "B4", duration: "8n" },
       { time: "10:3:0", note: "A4", duration: "4n" },
 
-      { time: "11:0:0", note: "D5", duration: "1m" }
-    ];
+      { time: "11:0:0", note: "D5", duration: "1m" },
 
-    // 영상 속 왼손 반주 (Bm - G - A - D 진행)
-    function createArpeggio(m, type) {
-      const beats = ["0:0", "0:2", "1:0", "2:0", "2:2", "3:0"];
-      let notes = [];
-      if (type === 'Bm') notes = ["B2", "F#3", "B3", "D4", "B3", "F#3"];
-      if (type === 'G')  notes = ["G2", "D3", "G3", "B3", "G3", "D3"];
-      if (type === 'A')  notes = ["A2", "E3", "A3", "C#4", "A3", "E3"];
-      if (type === 'D')  notes = ["D2", "A2", "D3", "F#3", "D3", "A2"];
+      // --- B파트 전환부 (13~16마디) ---
+      { time: "12:0:0", note: "F#5", duration: "8n" },
+      { time: "12:0:2", note: "A5", duration: "8n" },
+      { time: "12:1:0", note: "F#5", duration: "8n" },
+      { time: "12:1:2", note: "D5", duration: "8n" },
+      { time: "12:2:0", note: "E5", duration: "4n" },
+      { time: "12:3:0", note: "C#5", duration: "4n" },
 
-      return beats.map((b, i) => ({
-        time: `${m}:${b}`,
-        note: notes[i],
-        duration: "8n"
-      }));
-    }
+      { time: "13:0:0", note: "D5", duration: "8n" },
+      { time: "13:0:2", note: "F#5", duration: "8n" },
+      { time: "13:1:0", note: "D5", duration: "8n" },
+      { time: "13:1:2", note: "B4", duration: "8n" },
+      { time: "13:2:0", note: "C#5", duration: "4n" },
+      { time: "13:3:0", note: "A4", duration: "4n" },
 
-    const leftHand = [
-      ...createArpeggio(0, 'Bm'), ...createArpeggio(1, 'G'), ...createArpeggio(2, 'A'), ...createArpeggio(3, 'D'),
-      ...createArpeggio(4, 'Bm'), ...createArpeggio(5, 'G'), ...createArpeggio(6, 'A'), ...createArpeggio(7, 'D'),
-      ...createArpeggio(8, 'Bm'), ...createArpeggio(9, 'G'), ...createArpeggio(10, 'A'), ...createArpeggio(11, 'D')
+      { time: "14:0:0", note: "B4", duration: "8n" },
+      { time: "14:0:2", note: "D5", duration: "8n" },
+      { time: "14:1:0", note: "F#5", duration: "8n" },
+      { time: "14:1:2", note: "E5", duration: "8n" },
+      { time: "14:2:0", note: "D5", duration: "8n" },
+      { time: "14:2:2", note: "C#5", duration: "8n" },
+      { time: "14:3:0", note: "B4", duration: "4n" },
+
+      { time: "15:0:0", note: "A4", duration: "1m" },
+
+      // --- 마무리 (17~20마디) ---
+      { time: "16:0:0", note: "A4", duration: "8n" },
+      { time: "16:0:2", note: "D5", duration: "8n" },
+      { time: "16:1:0", note: "E5", duration: "8n" },
+      { time: "16:1:2", note: "F#5", duration: "8n" },
+      { time: "16:2:0", note: "E5", duration: "8n" },
+      { time: "16:2:2", note: "D5", duration: "8n" },
+      { time: "16:3:0", note: "E5", duration: "4n" },
+
+      { time: "17:0:0", note: "F#5", duration: "4n" },
+      { time: "17:1:0", note: "F#5", duration: "8n" },
+      { time: "17:1:2", note: "F#5", duration: "8n" },
+      { time: "17:2:0", note: "E5", duration: "8n" },
+      { time: "17:2:2", note: "D5", duration: "8n" },
+      { time: "17:3:0", note: "E5", duration: "4n" },
+
+      { time: "18:0:0", note: "D5", duration: "8n" },
+      { time: "18:0:2", note: "E5", duration: "8n" },
+      { time: "18:1:0", note: "F#5", duration: "8n" },
+      { time: "18:1:2", note: "E5", duration: "8n" },
+      { time: "18:2:0", note: "D5", duration: "8n" },
+      { time: "18:2:2", note: "B4", duration: "8n" },
+      { time: "18:3:0", note: "A4", duration: "4n" },
+
+      { time: "19:0:0", note: "D5", duration: "1m" }
     ];
 
     let isPlaying = false;
@@ -200,16 +250,16 @@
 
     const score = [
       ...rightHand.map(e => ({ ...e, velocity: 0.9 })),
-      ...leftHand.map(e => ({ ...e, velocity: 0.55 }))
+      ...leftHand.map(e => ({ ...e, velocity: 0.5 }))
     ];
 
     const part = new Tone.Part((time, event) => {
       synth.triggerAttackRelease(event.note, event.duration, time, event.velocity);
     }, score);
 
-    part.loop = true;
-    part.loopEnd = "12:0:0"; 
-    Tone.Transport.bpm.value = 115; // 핑크피아노 원곡 템포
+    // 짧은 반복 없이 곡 전체(20마디) 재생
+    part.loop = false;
+    Tone.Transport.bpm.value = 110; 
 
     playBtn.addEventListener("click", async () => {
       await Tone.start();
