@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer - Joe Hisaishi</title>
+  <title>Summer - Hisaishi Joe</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0;
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
       font-family: 'Pretendard', -apple-system, sans-serif;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
@@ -26,28 +26,28 @@
     p { color: #666; font-size: 0.95rem; margin: 0 0 28px 0; }
     .controls { display: flex; flex-direction: column; align-items: center; gap: 20px; }
     .btn {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
       border: none; color: white; padding: 14px 36px;
       font-size: 1.05rem; font-weight: 600; border-radius: 30px;
       cursor: pointer; transition: all 0.25s ease;
-      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.35); width: 100%;
+      box-shadow: 0 6px 20px rgba(37, 117, 252, 0.35); width: 100%;
     }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 117, 252, 0.5); }
     .volume-box {
       width: 100%; display: flex; align-items: center; justify-content: space-between;
       background: rgba(0, 0, 0, 0.04); padding: 12px 18px; border-radius: 16px;
     }
     .volume-box label { font-size: 0.85rem; font-weight: 600; color: #555; }
-    .volume-box input[type="range"] { width: 65%; accent-color: #4facfe; cursor: pointer; }
+    .volume-box input[type="range"] { width: 65%; accent-color: #2575fc; cursor: pointer; }
     .visualizer { display: flex; justify-content: center; align-items: flex-end; gap: 6px; height: 40px; margin-top: 24px; }
-    .bar { width: 7px; height: 8px; background-color: #4facfe; border-radius: 4px; transition: height 0.12s ease; }
+    .bar { width: 7px; height: 8px; background-color: #2575fc; border-radius: 4px; transition: height 0.12s ease; }
   </style>
 </head>
 <body>
 
   <div class="card">
     <h1>Summer</h1>
-    <p>Joe Hisaishi </p>
+    <p>Joe Hisaishi Piano Cover</p>
     
     <div class="controls">
       <button id="playBtn" class="btn">▶ 연주 시작</button>
@@ -65,19 +65,41 @@
   </div>
 
   <script>
-    // 공간감 설정 (리버브)
-    const reverb = new Tone.Reverb({ decay: 2.2, wet: 0.3 }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 }).toDestination();
     
     const synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
-      envelope: { attack: 0.01, decay: 0.4, sustain: 0.2, release: 1.2 }
+      envelope: { attack: 0.008, decay: 0.35, sustain: 0.2, release: 1.0 }
     }).connect(reverb);
 
     Tone.Destination.volume.value = -4;
 
-    // [완벽 재정의] 오른손 메인 테마 (마디 9~16)
-    // 8마디 전주 후 9마디부터 "미-파#-미-도#-라-시..." 들어감
+    // 오른손 멜로디 (마디 5부터 멜로디 시작)
     const rightHand = [
+      // 5마디 (00:18 부근)
+      { time: "4:0:0", note: "E5", duration: "8n" },
+      { time: "4:0:2", note: "F#5", duration: "16n." },
+      { time: "4:1:1", note: "E5", duration: "16n" },
+      { time: "4:2:0", note: "C#5", duration: "8n." },
+      { time: "4:3:1", note: "A4", duration: "16n" },
+      
+      // 6마디
+      { time: "5:0:0", note: "B4", duration: "2n." },
+      { time: "5:3:0", note: "A4", duration: "8n" },
+      { time: "5:3:2", note: "B4", duration: "8n" },
+      
+      // 7마디
+      { time: "6:0:0", note: "C#5", duration: "8n" },
+      { time: "6:0:2", note: "D5", duration: "16n." },
+      { time: "6:1:1", note: "C#5", duration: "16n" },
+      { time: "6:2:0", note: "A4", duration: "8n." },
+      { time: "6:3:1", note: "F#4", duration: "16n" },
+      
+      // 8마디
+      { time: "7:0:0", note: "E4", duration: "2n." },
+      { time: "7:3:0", note: "A4", duration: "8n" },
+      { time: "7:3:2", note: "B4", duration: "8n" },
+      
       // 9마디
       { time: "8:0:0", note: "E5", duration: "8n" },
       { time: "8:0:2", note: "F#5", duration: "16n." },
@@ -95,40 +117,13 @@
       { time: "10:0:2", note: "D5", duration: "16n." },
       { time: "10:1:1", note: "C#5", duration: "16n" },
       { time: "10:2:0", note: "A4", duration: "8n." },
-      { time: "10:3:1", note: "F#4", duration: "16n" },
+      { time: "10:3:1", note: "C#5", duration: "16n" },
       
       // 12마디
-      { time: "11:0:0", note: "E4", duration: "2n." },
-      { time: "11:3:0", note: "A4", duration: "8n" },
-      { time: "11:3:2", note: "B4", duration: "8n" },
-      
-      // 13마디
-      { time: "12:0:0", note: "E5", duration: "8n" },
-      { time: "12:0:2", note: "F#5", duration: "16n." },
-      { time: "12:1:1", note: "E5", duration: "16n" },
-      { time: "12:2:0", note: "C#5", duration: "8n." },
-      { time: "12:3:1", note: "A4", duration: "16n" },
-      
-      // 14마디
-      { time: "13:0:0", note: "B4", duration: "2n." },
-      { time: "13:3:0", note: "A4", duration: "8n" },
-      { time: "13:3:2", note: "B4", duration: "8n" },
-      
-      // 15마디
-      { time: "14:0:0", note: "C#5", duration: "8n" },
-      { time: "14:0:2", note: "D5", duration: "16n." },
-      { time: "14:1:1", note: "C#5", duration: "16n" },
-      { time: "14:2:0", note: "A4", duration: "8n." },
-      { time: "14:3:1", note: "C#5", duration: "16n" },
-      
-      // 16마디
-      { time: "15:0:0", note: "A4", duration: "1m" }
+      { time: "11:0:0", note: "A4", duration: "1m" }
     ];
 
-    // [완벽 재정의] 왼손 아르페지오 패턴 함수 (마디 단위 생성)
-    // 패턴 1 (A 코드): A2 - E3 - A3 - C#4 - A3 - E3
-    // 패턴 2 (D 코드): D2 - A2 - D3 - F#3 - D3 - A2
-    // 패턴 3 (E 코드): E2 - B2 - E3 - G#3 - E3 - B2
+    // 왼손 아르페지오 생성
     function createArpeggio(m, type) {
       const beats = ["0:0", "0:2", "1:0", "2:0", "2:2", "3:0"];
       let notes = [];
@@ -143,12 +138,10 @@
       }));
     }
 
-    // 악보상 1~16마디 왼손 순서: A-D-E-A-A-D-E-A-A-D-E-A-A-D-E-A
     const leftHand = [
       ...createArpeggio(0, 'A'), ...createArpeggio(1, 'D'), ...createArpeggio(2, 'E'), ...createArpeggio(3, 'A'),
       ...createArpeggio(4, 'A'), ...createArpeggio(5, 'D'), ...createArpeggio(6, 'E'), ...createArpeggio(7, 'A'),
-      ...createArpeggio(8, 'A'), ...createArpeggio(9, 'D'), ...createArpeggio(10, 'E'), ...createArpeggio(11, 'A'),
-      ...createArpeggio(12, 'A'), ...createArpeggio(13, 'D'), ...createArpeggio(14, 'E'), ...createArpeggio(15, 'A')
+      ...createArpeggio(8, 'A'), ...createArpeggio(9, 'D'), ...createArpeggio(10, 'E'), ...createArpeggio(11, 'A')
     ];
 
     let isPlaying = false;
@@ -178,7 +171,6 @@
       setTimeout(animateVisualizer, 100);
     }
 
-    // 오른손(멜로디)은 선명하게, 왼손(반주)은 부드럽게
     const score = [
       ...rightHand.map(e => ({ ...e, velocity: 0.9 })),
       ...leftHand.map(e => ({ ...e, velocity: 0.55 }))
@@ -189,8 +181,8 @@
     }, score);
 
     part.loop = true;
-    part.loopEnd = "16:0:0"; 
-    Tone.Transport.bpm.value = 108; // 원곡 시그니처 템포
+    part.loopEnd = "12:0:0"; 
+    Tone.Transport.bpm.value = 112; 
 
     playBtn.addEventListener("click", async () => {
       await Tone.start();
