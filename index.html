@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer - Volume Control & Keyboard Piano</title>
+  <title>Summer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +22,6 @@
     h1 { color: #58a6ff; font-size: 1.5rem; margin-bottom: 6px; }
     p.desc { font-size: 0.85rem; color: #8b949e; margin-bottom: 20px; }
 
-    /* 단축키 가이드 */
     .key-guide {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
       margin-bottom: 20px;
@@ -39,35 +38,23 @@
     .key-box .label { font-size: 0.75rem; color: #8b949e; }
     .key-box.active { border-color: #238636; background: #1c2d22; }
 
-    /* 볼륨 슬라이더 영역 */
     .control-section {
       background: #0d1117; border: 1px solid #30363d;
       border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;
     }
-    .control-row {
-      margin-bottom: 16px;
-    }
+    .control-row { margin-bottom: 16px; }
     .control-row:last-child { margin-bottom: 0; }
     .control-header {
       display: flex; justify-content: space-between; align-items: center;
       font-size: 0.88rem; margin-bottom: 8px; font-weight: bold;
     }
-    .slider-container {
-      display: flex; align-items: center; gap: 10px;
-    }
-    input[type="range"] {
-      flex: 1; accent-color: #238636; cursor: pointer; height: 6px;
-    }
-    .vol-value {
-      font-size: 0.8rem; width: 36px; text-align: right; color: #58a6ff; font-weight: bold;
-    }
-    .status-badge {
-      font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: normal;
-    }
+    .slider-container { display: flex; align-items: center; gap: 10px; }
+    input[type="range"] { flex: 1; accent-color: #238636; cursor: pointer; height: 6px; }
+    .vol-value { font-size: 0.8rem; width: 36px; text-align: right; color: #58a6ff; font-weight: bold; }
+    .status-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: normal; }
     .bg-on { background: #238636; color: #fff; }
     .bg-off { background: #da3633; color: #fff; }
 
-    /* 모드 표시 */
     .mode-bar {
       display: flex; justify-content: space-between; align-items: center;
       padding-top: 12px; border-top: 1px dashed #30363d; font-size: 0.85rem;
@@ -84,10 +71,9 @@
 <body>
 
   <div class="panel">
-    <h1>Summer (피아노 연주기)</h1>
-    <p class="desc">슬라이더로 소리를 조절하고, Q/W/E 키로 조작하세요</p>
+    <h1>Summer </h1>
+    <p class="desc">단축키로 출력모드를 변경해보세요 !</p>
 
-    <!-- 단축키 안내 -->
     <div class="key-guide">
       <div id="boxQ" class="key-box active">
         <span class="key">Q</span>
@@ -103,9 +89,7 @@
       </div>
     </div>
 
-    <!-- 볼륨 조절 슬라이더 영역 -->
     <div class="control-section">
-      <!-- 왼손 컨트롤 -->
       <div class="control-row">
         <div class="control-header">
           <span>👈 왼손 (베이스) 볼륨</span>
@@ -117,7 +101,6 @@
         </div>
       </div>
 
-      <!-- 오른손 컨트롤 -->
       <div class="control-row">
         <div class="control-header">
           <span>👉 오른손 (멜로디) 볼륨</span>
@@ -129,7 +112,6 @@
         </div>
       </div>
 
-      <!-- 채널 모드 -->
       <div class="mode-bar">
         <span>📻 채널 출력 모드:</span>
         <span id="txtMode" style="color:#58a6ff; font-weight:bold;">좌우 분리 (Stereo)</span>
@@ -140,70 +122,57 @@
   </div>
 
   <script>
-    // 오디오 노드 구성
+    // 오디오 출력 노드 설정
     const leftPanner = new Tone.Panner(-1).toDestination();
     const rightPanner = new Tone.Panner(1).toDestination();
 
-    const leftVol = new Tone.Volume(0).connect(leftPanner);
-    const rightVol = new Tone.Volume(0).connect(rightPanner);
+    const leftVol = new Tone.Volume(-6).connect(leftPanner);
+    const rightVol = new Tone.Volume(-6).connect(rightPanner);
 
+    // [음 멈춤 버그 방지] 확실한 음 감쇄 및 안전한 PolySynth
     const leftSynth = new Tone.PolySynth(Tone.Synth, {
+      maxPolyphony: 32,
       oscillator: { type: "triangle" },
-      envelope: { attack: 0.01, decay: 0.35, sustain: 0.25, release: 1.0 }
+      envelope: { attack: 0.005, decay: 0.3, sustain: 0.0, release: 0.15 }
     }).connect(leftVol);
 
     const rightSynth = new Tone.PolySynth(Tone.Synth, {
+      maxPolyphony: 32,
       oscillator: { type: "triangle" },
-      envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 1.0 }
+      envelope: { attack: 0.005, decay: 0.4, sustain: 0.1, release: 0.2 }
     }).connect(rightVol);
 
     Tone.Destination.volume.value = -2;
 
-    // --- 악보 데이터 ---
-    function buildPattern(measures, defaultDuration = "4", isStaccato = true) {
-      let result = [];
-      measures.forEach(m => {
-        const notes = m.split('/');
-        const durStr = isStaccato ? `(${defaultDuration},Staccato)` : `(${defaultDuration})`;
-        result.push(notes.map(n => `${n.trim()}${durStr}`).join(' / '));
-      });
-      return result.join(' // ');
-    }
+    // --- [패턴 정의] ---
+    const patA = "B2(4) / F#3(4,Staccato) / B3(4,Staccato) / F#3(4,Staccato) // G2(4) / D3(4,Staccato) / G3(4,Staccato) / D3(4,Staccato) // A2(4) / E3(4,Staccato) / A3(4,Staccato) / E3(4,Staccato) // D2(4) / A2(4,Staccato) / D3(4,Staccato) / A2(4,Staccato)";
 
-    const patternA_Measures = ["B2 / F#3 / B3 / F#3", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "D2 / A2 / D3 / A2"];
-    const patternB_Measures = ["A2 / E3 / A3 / E3", "G2 / D3 / G3 / D3", "F#2 / C#3 / A3 / C#3", "B2 / F#3 / B3 / F#3", "E2 / B2 / E3 / B2", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "A2 / E3 / A3 / E3"];
+    const patB = "A2(4) / E3(4,Staccato) / A3(4,Staccato) / E3(4,Staccato) // G2(4) / D3(4,Staccato) / G3(4,Staccato) / D3(4,Staccato) // F#2(4) / C#3(4,Staccato) / A3(4,Staccato) / C#3(4,Staccato) // B2(4) / F#3(4,Staccato) / B3(4,Staccato) / F#3(4,Staccato) // E2(4) / B2(4,Staccato) / E3(4,Staccato) / B2(4,Staccato) // G2(4) / D3(4,Staccato) / G3(4,Staccato) / D3(4,Staccato) // A2(4) / E3(4,Staccato) / A3(4,Staccato) / E3(4,Staccato) // A2(4) / E3(4,Staccato) / A3(4,Staccato) / E3(4,Staccato)";
 
-    let m_1_16 = [];
-    for(let i=0; i<4; i++) m_1_16.push(buildPattern(patternA_Measures));
-    const sec_1_16 = m_1_16.join(' // ');
+    const patB_short = "A2(4) / E3(4,Staccato) / A3(4,Staccato) / E3(4,Staccato) // G2(4) / D3(4,Staccato) / G3(4,Staccato) / D3(4,Staccato) // F#2(4) / C#3(4,Staccato) / A3(4,Staccato) / C#3(4,Staccato) // B2(4) / F#3(4,Staccato) / B3(4,Staccato) / F#3(4,Staccato)";
 
-    const sec_17_24 = buildPattern(patternB_Measures);
-
-    let m_25_32 = [];
-    for(let i=0; i<2; i++) m_25_32.push(buildPattern(patternA_Measures));
-    const sec_25_32 = m_25_32.join(' // ');
-
+    const sec_1_16 = [patA, patA, patA, patA].join(" // ");
+    const sec_17_24 = patB;
+    const sec_25_32 = [patA, patA].join(" // ");
     const sec_33_34 = "E2(4) / B2(4) / E3(4) / B2(4) // A2(1)";
     const sec_35_42 = "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4) // D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
     const sec_43_71 = "A3&F#3&D3(2) / A3&F#3&D3(2) // A3&G3&E3(2) / A3&G3&E3(2) // A3&F#3(2) / A3&F#3(2) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) // A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) // A3&F#3(4) / A3&F#3(4) / A3&F#3(4) / A3&F#3(4) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // D4&B3&G3(2) / D4&B3&G3(2) // D4&C4&A4(2) / D4&C4&A3(2) // D4&B3(2) // D4&B3(2) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) // D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) // D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // A2&A1(2) / C4&A3&E3(2) // G2&G1(2) / D4&B3&G3(2) // F#2&F#1(2) / E4&C4&F#3(2) // B2&B1(2) / D4&B3&F#3(2) // E2&E1(2) / D4&B3&G#3(2) // G2&G1(2) / D4&B3&G3(2) // A2&A1(2) / E4&A3&G3(2) // A2&A1(2) / C#4&A3&G3(2)";
-
-    let m_72_79 = [];
-    for(let i=0; i<2; i++) m_72_79.push(buildPattern(patternA_Measures));
-    const sec_72_79 = m_72_79.join(' // ');
-
-    const sec_80_84 = buildPattern(patternB_Measures.slice(0, 4));
+    const sec_72_79 = [patA, patA].join(" // ");
+    const sec_80_84 = patB_short;
     const sec_85_86 = sec_33_34;
     const sec_87_98 = sec_35_42 + " // " + "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
-    const sec_99_101 = "D3(4) / A3(4) / D4(2) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D3&D2(1)";
+    const sec_99 = "D3(4) / A3(4) / D4(2)";
+    const sec_100_101 = "G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D3&D2(1)";
 
     const leftHandScoreText = [
       sec_1_16, sec_17_24, sec_25_32, sec_33_34, sec_35_42,
-      sec_43_71, sec_72_79, sec_80_84, sec_85_86, sec_87_98, sec_99_101
+      sec_43_71, sec_72_79, sec_80_84, sec_85_86, sec_87_98,
+      sec_99, sec_100_101
     ].join(' // ');
 
-    const rightHandScoreText = "X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(2) /  A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(8) / E5&B4(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / E5(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) //  F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G#4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(8) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8), F#5(8), E5(8)<3> / D5(8) / B4(8) // D5(2) / D5(4) / A4(4) // F#4(1) // F#4&D4(2) / D4&B3(4) / F#4(4) // E4&C4(1) // A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) //  A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) //  A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) // D4&C#4(1) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) //  A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(8) // F#5&B4&G4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / G4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8),F#5(8),E5(8)<3> / D5(8) / B4(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(4) / D6&D5(2) // C#6&C#5(3) / A6&A5(4) // B5&F#5&D5(2) / B3(8) / C#4(8) / D4(8) / E4(8) // F#4(8) / G4(8) / E4(4) / A4(8) / D5(8) / E5(8) / F#5(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // B4&G4&D4(4d) / A4&D4(8) ~ A4&D4(4) / G4&D4(4) // F#4&E4&D4(1)";
+    const rightHandScoreText = "X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(8) / E5&B4(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / E5(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G#4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8), F#5(8), E5(8)<3> / D5(8) / B4(8) // D5(2) / D5(4) / A4(4) // F#4(1) // F#4&D4(2) / D4&B3(4) / F#4(4) // E4&C4(1) // A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) // A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) // A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) // D4&C#4(1) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) // A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(8) // F#5&B4&G4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / G4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8),F#5(8),E5(8)<3> / D5(8) / B4(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(4) / D6&D5(2) // C#6&C#5(3) / A6&A5(4) // B5&F#5&D5(2) / B3(8) / C#4(8) / D4(8) / E4(8) // F#4(8) / G4(8) / E4(4) / A4(8) / D5(8) / E5(8) / F#5(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // B4&G4&D4(4d) / A4&D4(8) ~ A4&D4(4) / G4&D4(4) // F#4&E4&D4(1)";
 
-    // --- 커스텀 파서 ---
+    // [핵심 해결] 완벽하고 엄격한 정규식 파서
     function parseCustomScore(scoreText) {
       const measures = scoreText.split('//');
       let events = [];
@@ -217,17 +186,11 @@
           let str = nRaw.trim();
           if (!str) return;
 
-          let isTied = false;
-          if (str.startsWith('~')) {
-            isTied = true;
-            str = str.substring(1).trim();
-          }
+          let isTied = str.startsWith('~');
+          if (isTied) str = str.substring(1).trim();
 
-          let isTriplet = false;
-          if (str.includes('<3>')) {
-            isTriplet = true;
-            str = str.replace('<3>', '').trim();
-          }
+          let isTriplet = str.includes('<3>');
+          if (isTriplet) str = str.replace('<3>', '').trim();
 
           const subNotes = str.split(',');
 
@@ -235,14 +198,18 @@
             let itemStr = subStr.trim();
             if (!itemStr) return;
 
-            const match = itemStr.match(/^([^\(]+)\(([^\)]+)\)$/);
-            if (!match) return;
+            let noteNameRaw = itemStr;
+            let durationVal = '4';
+            let isStaccato = false;
 
-            const noteNameRaw = match[1].trim();
-            const attrStr = match[2].trim();
-            const attrs = attrStr.split(',').map(s => s.trim());
-            const durationVal = attrs[0]; 
-            const isStaccato = attrs.includes('Staccato');
+            const match = itemStr.match(/^([^\(]+)\(([^\)]+)\)$/);
+            if (match) {
+              noteNameRaw = match[1].trim();
+              const attrStr = match[2].trim();
+              const attrs = attrStr.split(',').map(s => s.trim());
+              durationVal = attrs[0];
+              isStaccato = attrs.includes('Staccato');
+            }
 
             let durUnits = 1.0;
             if (durationVal === '1') durUnits = 4.0;
@@ -252,24 +219,25 @@
             else if (durationVal === '8') durUnits = 0.5;
             else if (durationVal === '4d') durUnits = 1.5;
 
-            if (isTriplet) {
-              durUnits = durUnits * (2 / 3);
-            }
+            if (isTriplet) durUnits *= (2 / 3);
 
             const beatInt = Math.floor(currentBeatInMeasure);
             const beatRem = currentBeatInMeasure - beatInt;
             const sixteenth = Math.round(beatRem * 4);
             const timePosition = `${currentMeasure}:${beatInt}:${sixteenth}`;
 
+            // [핵심 고침] Pure Note extraction - B2, F#3 등 순수한 음표명만 정규식 추출
             let noteArray = [];
             if (!noteNameRaw.startsWith('^') && !noteNameRaw.startsWith('X')) {
-              noteArray = noteNameRaw.split('&').map(s => s.trim());
+              const rawNotes = noteNameRaw.split('&');
+              rawNotes.forEach(rn => {
+                const cleanNote = rn.match(/[A-G][#b]?[0-8]/g);
+                if (cleanNote) noteArray.push(...cleanNote);
+              });
             }
 
-            let playDuration = durUnits * (60 / 112); 
-            if (isStaccato) {
-              playDuration = durUnits * 0.45 * (60 / 112);
-            }
+            let baseDurationSec = durUnits * (60 / 112); 
+            let playDuration = isStaccato ? 0.12 : baseDurationSec * 0.85;
 
             if (isTied && events.length > 0) {
               events[events.length - 1].duration += playDuration;
@@ -295,7 +263,7 @@
     const rightEvents = parseCustomScore(rightHandScoreText);
 
     const leftPart = new Tone.Part((time, event) => {
-      leftSynth.triggerAttackRelease(event.notes, event.duration, time, 0.85);
+      leftSynth.triggerAttackRelease(event.notes, event.duration, time, 0.7);
     }, leftEvents);
 
     const rightPart = new Tone.Part((time, event) => {
@@ -306,12 +274,11 @@
     rightPart.loop = false;
     Tone.Transport.bpm.value = 112;
 
-    // --- 상태 및 UI 제어 ---
+    // UI 컨트롤
     let stateLeft = true;
     let stateRight = true;
     let isStereo = true;
 
-    // UI 요소
     const volLeftSlider = document.getElementById("volLeft");
     const volRightSlider = document.getElementById("volRight");
     const txtLeft = document.getElementById("txtLeft");
@@ -324,45 +291,40 @@
     const boxW = document.getElementById("boxW");
     const boxE = document.getElementById("boxE");
 
-    // 퍼센트를 데시벨(dB)로 변환하는 함수
     function percentToDb(val) {
       if (val <= 0) return -100;
-      // 0~100 퍼센트를 -40dB ~ 0dB 스케일로 변환
       return (val / 100) * 40 - 40;
     }
 
     function updateAudioAndUI() {
-      // 왼손 볼륨 계산
       const valL = parseInt(volLeftSlider.value);
       txtLeft.innerText = `${valL}%`;
       if (stateLeft) {
-        leftVol.volume.value = percentToDb(valL);
+        leftVol.volume.rampTo(percentToDb(valL), 0.1);
         badgeLeft.innerText = "ON";
         badgeLeft.className = "status-badge bg-on";
         boxQ.classList.add("active");
       } else {
-        leftVol.volume.value = -100;
+        leftVol.volume.rampTo(-100, 0.1);
         badgeLeft.innerText = "OFF";
         badgeLeft.className = "status-badge bg-off";
         boxQ.classList.remove("active");
       }
 
-      // 오른손 볼륨 계산
       const valR = parseInt(volRightSlider.value);
       txtRight.innerText = `${valR}%`;
       if (stateRight) {
-        rightVol.volume.value = percentToDb(valR);
+        rightVol.volume.rampTo(percentToDb(valR), 0.1);
         badgeRight.innerText = "ON";
         badgeRight.className = "status-badge bg-on";
         boxE.classList.add("active");
       } else {
-        rightVol.volume.value = -100;
+        rightVol.volume.rampTo(-100, 0.1);
         badgeRight.innerText = "OFF";
         badgeRight.className = "status-badge bg-off";
         boxE.classList.remove("active");
       }
 
-      // 채널 모드 계산
       if (isStereo) {
         leftPanner.pan.value = -1;
         rightPanner.pan.value = 1;
@@ -378,14 +340,11 @@
       }
     }
 
-    // 슬라이더 이벤트
     volLeftSlider.addEventListener("input", updateAudioAndUI);
     volRightSlider.addEventListener("input", updateAudioAndUI);
 
-    // 키보드 이벤트
     window.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
-
       if (key === "q") {
         stateLeft = !stateLeft;
         updateAudioAndUI();
@@ -401,7 +360,6 @@
       }
     });
 
-    // 재생 제어
     let isPlaying = false;
     const playBtn = document.getElementById("playBtn");
 
@@ -409,6 +367,7 @@
       await Tone.start();
 
       if (!isPlaying) {
+        Tone.Transport.position = 0;
         Tone.Transport.start();
         leftPart.start(0);
         rightPart.start(0);
@@ -417,6 +376,8 @@
         playBtn.style.background = "#da3633";
       } else {
         Tone.Transport.stop();
+        leftSynth.releaseAll();
+        rightSynth.releaseAll();
         isPlaying = false;
         playBtn.innerText = "▶ 연주 시작 (Spacebar)";
         playBtn.style.background = "#238636";
@@ -425,7 +386,6 @@
 
     playBtn.addEventListener("click", togglePlay);
 
-    // 초기 실행
     updateAudioAndUI();
   </script>
 </body>
