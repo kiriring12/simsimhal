@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer - Joe Hisaishi</title>
+  <title>Summer (Easy Score) - Joe Hisaishi</title>
   <!-- Tone.js 오디오 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
@@ -105,15 +105,14 @@
 
   <div class="card">
     <h1>Summer</h1>
-    <p>Joe Hisaishi — 기쿠지로의 여름 OST</p>
+    <p>Joe Hisaishi — Easy Score ver.</p>
     
     <div class="controls">
       <button id="playBtn" class="btn">▶ 연주 시작</button>
       
-      <!-- 소리 조절 슬라이더 바 -->
       <div class="volume-box">
         <label for="volumeSlider">🔊 볼륨</label>
-        <input type="range" id="volumeSlider" min="-30" max="6" value="0" step="1">
+        <input type="range" id="volumeSlider" min="-30" max="6" value="-5" step="1">
       </div>
     </div>
     
@@ -128,90 +127,123 @@
   </div>
 
   <script>
-    // 1. 공간감 효과(리버브) 및 피아노 음색
-    const reverb = new Tone.Reverb({ decay: 2.0, wet: 0.25 }).toDestination();
+    // 1. 이펙터 및 신시사이저 설정 (악보 느낌에 맞춰 부드럽게)
+    const reverb = new Tone.Reverb({ decay: 2.2, wet: 0.3 }).toDestination();
     
     const synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
-      envelope: {
-        attack: 0.01,
-        decay: 0.4,
-        sustain: 0.2,
-        release: 1.0
-      }
+      envelope: { attack: 0.005, decay: 0.3, sustain: 0.3, release: 1.2 }
     }).connect(reverb);
 
-    // Master 볼륨 설정 (기본값 0dB)
-    Tone.Destination.volume.value = 0;
+    // 초기 볼륨 설정 (-5dB)
+    Tone.Destination.volume.value = -5;
 
-    // 2. 실제 <Summer> 메인 테마 계이름 (A 메이저 조)
-    // Intro + A 파트 메인 멜로디
+    // 2. 악보 데이터 (A Major) - 처음 16마디
+    
+    // 오른손 멜로디 (Right Hand)
     const rightHand = [
-      // INTRO (특유의 3음 튀김: C#5 - D5 - E5)
-      { time: "0:0:0", note: "C#5", duration: "16n" },
-      { time: "0:0:1", note: "D5", duration: "16n" },
-      { time: "0:0:2", note: "E5", duration: "8n" },
+      // 1-8마디: 오른손 쉼표
       
-      { time: "0:1:0", note: "C#5", duration: "16n" },
-      { time: "0:1:1", note: "D5", duration: "16n" },
-      { time: "0:1:2", note: "E5", duration: "8n" },
-
-      { time: "0:2:0", note: "C#5", duration: "16n" },
-      { time: "0:2:1", note: "D5", duration: "16n" },
-      { time: "0:2:2", note: "E5", duration: "8n" },
-
-      { time: "0:3:0", note: "C#5", duration: "16n" },
-      { time: "0:3:1", note: "D5", duration: "16n" },
-      { time: "0:3:2", note: "E5", duration: "8n" },
-
-      // 메인 멜로디 테마 (A 마디부터)
-      { time: "1:0:0", note: "A5", duration: "8n" },
-      { time: "1:0:2", note: "F#5", duration: "8n" },
-      { time: "1:1:0", note: "E5", duration: "8n" },
-      { time: "1:1:2", note: "C#5", duration: "8n" },
-      { time: "1:2:0", note: "D5", duration: "8n" },
-      { time: "1:2:2", note: "C#5", duration: "8n" },
-      { time: "1:3:0", note: "B4", duration: "4n" },
-
-      { time: "2:0:0", note: "A4", duration: "8n" },
-      { time: "2:0:2", note: "B4", duration: "8n" },
-      { time: "2:1:0", note: "C#5", duration: "8n" },
-      { time: "2:1:2", note: "D5", duration: "8n" },
-      { time: "2:2:0", note: "E5", duration: "4n" },
-      { time: "2:3:0", note: "A4", duration: "4n" },
-
-      { time: "3:0:0", note: "A5", duration: "8n" },
-      { time: "3:0:2", note: "F#5", duration: "8n" },
-      { time: "3:1:0", note: "E5", duration: "8n" },
-      { time: "3:1:2", note: "C#5", duration: "8n" },
-      { time: "3:2:0", note: "D5", duration: "8n" },
-      { time: "3:2:2", note: "C#5", duration: "8n" },
-      { time: "3:3:0", note: "B4", duration: "4n" }
+      // 9마디
+      { time: "8:0:0", note: "E5", duration: "8n" },
+      { time: "8:0:2", note: "F#5", duration: "16n." },
+      { time: "8:1:1", note: "E5", duration: "16n" },
+      { time: "8:2:0", note: "C#5", duration: "8n." },
+      { time: "8:3:1", note: "A4", duration: "16n" },
+      
+      // 10마디
+      { time: "9:0:0", note: "B4", duration: "2n." },
+      { time: "9:3:0", note: "A4", duration: "8n" },
+      { time: "9:3:2", note: "B4", duration: "8n" },
+      
+      // 11마디
+      { time: "10:0:0", note: "C#5", duration: "8n" },
+      { time: "10:0:2", note: "D5", duration: "16n." },
+      { time: "10:1:1", note: "C#5", duration: "16n" },
+      { time: "10:2:0", note: "A4", duration: "8n." },
+      { time: "10:3:1", note: "F#4", duration: "16n" },
+      
+      // 12마디
+      { time: "11:0:0", note: "E4", duration: "2n." },
+      { time: "11:3:0", note: "A4", duration: "8n" },
+      { time: "11:3:2", note: "B4", duration: "8n" },
+      
+      // 13마디 (9마디 반복)
+      { time: "12:0:0", note: "E5", duration: "8n" },
+      { time: "12:0:2", note: "F#5", duration: "16n." },
+      { time: "12:1:1", note: "E5", duration: "16n" },
+      { time: "12:2:0", note: "C#5", duration: "8n." },
+      { time: "12:3:1", note: "A4", duration: "16n" },
+      
+      // 14마디 (10마디 반복)
+      { time: "13:0:0", note: "B4", duration: "2n." },
+      { time: "13:3:0", note: "A4", duration: "8n" },
+      { time: "13:3:2", note: "B4", duration: "8n" },
+      
+      // 15마디 (11마디 변형)
+      { time: "14:0:0", note: "C#5", duration: "8n" },
+      { time: "14:0:2", note: "D5", duration: "16n." },
+      { time: "14:1:1", note: "C#5", duration: "16n" },
+      { time: "14:2:0", note: "A4", duration: "8n." },
+      { time: "14:3:1", note: "C#5", duration: "16n" },
+      
+      // 16마디
+      { time: "15:0:0", note: "A4", duration: "2n." },
+      // 쉼표
     ];
 
-    // 3. 베이스 라인 반주 (A - D - E - A 진행)
+    // 왼손 반주 (Left Hand)
+    // 악보 특유의 A-D-E-A 아르페지오 패턴
     const leftHand = [
-      // 1마디 Intro 베이스
-      { time: "0:0:0", note: "A2", duration: "2n" },
-      { time: "0:2:0", note: "A2", duration: "2n" },
-
+      // 1마디
+      { time: "0:0:0", note: "A2", duration: "8n" },
+      { time: "0:0:2", note: "E3", duration: "8n" },
+      { time: "0:1:0", note: "A3", duration: "8n" },
+      { time: "0:2:0", note: "C#4", duration: "8n" },
+      { time: "0:2:2", note: "A3", duration: "8n" },
+      { time: "0:3:0", note: "E3", duration: "8n" },
+      
       // 2마디
-      { time: "1:0:0", note: "A2", duration: "4n" },
-      { time: "1:1:0", note: "E3", duration: "4n" },
-      { time: "1:2:0", note: "F#2", duration: "4n" },
-      { time: "1:3:0", note: "C#3", duration: "4n" },
-
+      { time: "1:0:0", note: "D2", duration: "8n" },
+      { time: "1:0:2", note: "A2", duration: "8n" },
+      { time: "1:1:0", note: "D3", duration: "8n" },
+      { time: "1:2:0", note: "F#3", duration: "8n" },
+      { time: "1:2:2", note: "D3", duration: "8n" },
+      { time: "1:3:0", note: "A2", duration: "8n" },
+      
       // 3마디
-      { time: "2:0:0", note: "D2", duration: "4n" },
-      { time: "2:1:0", note: "A2", duration: "4n" },
-      { time: "2:2:0", note: "E2", duration: "4n" },
-      { time: "2:3:0", note: "B2", duration: "4n" },
-
+      { time: "2:0:0", note: "E2", duration: "8n" },
+      { time: "2:0:2", note: "B2", duration: "8n" },
+      { time: "2:1:0", note: "E3", duration: "8n" },
+      { time: "2:2:0", note: "G#3", duration: "8n" },
+      { time: "2:2:2", note: "E3", duration: "8n" },
+      { time: "2:3:0", note: "B2", duration: "8n" },
+      
       // 4마디
-      { time: "3:0:0", note: "A2", duration: "4n" },
-      { time: "3:1:0", note: "E3", duration: "4n" },
-      { time: "3:2:0", note: "F#2", duration: "4n" },
-      { time: "3:3:0", note: "C#3", duration: "4n" }
+      { time: "3:0:0", note: "A2", duration: "8n" },
+      { time: "3:0:2", note: "E3", duration: "8n" },
+      { time: "3:1:0", note: "A3", duration: "8n" },
+      { time: "3:2:0", note: "C#4", duration: "8n" },
+      { time: "3:2:2", note: "A3", duration: "8n" },
+      { time: "3:3:0", note: "E3", duration: "8n" },
+
+      // 5-8마디 (1-4 반복)
+      { time: "4:0:0", note: "A2", duration: "8n" }, { time: "4:0:2", note: "E3", duration: "8n" }, { time: "4:1:0", note: "A3", duration: "8n" }, { time: "4:2:0", note: "C#4", duration: "8n" }, { time: "4:2:2", note: "A3", duration: "8n" }, { time: "4:3:0", note: "E3", duration: "8n" },
+      { time: "5:0:0", note: "D2", duration: "8n" }, { time: "5:0:2", note: "A2", duration: "8n" }, { time: "5:1:0", note: "D3", duration: "8n" }, { time: "5:2:0", note: "F#3", duration: "8n" }, { time: "5:2:2", note: "D3", duration: "8n" }, { time: "5:3:0", note: "A2", duration: "8n" },
+      { time: "6:0:0", note: "E2", duration: "8n" }, { time: "6:0:2", note: "B2", duration: "8n" }, { time: "6:1:0", note: "E3", duration: "8n" }, { time: "6:2:0", note: "G#3", duration: "8n" }, { time: "6:2:2", note: "E3", duration: "8n" }, { time: "6:3:0", note: "B2", duration: "8n" },
+      { time: "7:0:0", note: "A2", duration: "8n" }, { time: "7:0:2", note: "E3", duration: "8n" }, { time: "7:1:0", note: "A3", duration: "8n" }, { time: "7:2:0", note: "C#4", duration: "8n" }, { time: "7:2:2", note: "A3", duration: "8n" }, { time: "7:3:0", note: "E3", duration: "8n" },
+
+      // 9-12마디 (1-4 반복)
+      { time: "8:0:0", note: "A2", duration: "8n" }, { time: "8:0:2", note: "E3", duration: "8n" }, { time: "8:1:0", note: "A3", duration: "8n" }, { time: "8:2:0", note: "C#4", duration: "8n" }, { time: "8:2:2", note: "A3", duration: "8n" }, { time: "8:3:0", note: "E3", duration: "8n" },
+      { time: "9:0:0", note: "D2", duration: "8n" }, { time: "9:0:2", note: "A2", duration: "8n" }, { time: "9:1:0", note: "D3", duration: "8n" }, { time: "9:2:0", note: "F#3", duration: "8n" }, { time: "9:2:2", note: "D3", duration: "8n" }, { time: "9:3:0", note: "A2", duration: "8n" },
+      { time: "10:0:0", note: "E2", duration: "8n" }, { time: "10:0:2", note: "B2", duration: "8n" }, { time: "10:1:0", note: "E3", duration: "8n" }, { time: "10:2:0", note: "G#3", duration: "8n" }, { time: "10:2:2", note: "E3", duration: "8n" }, { time: "10:3:0", note: "B2", duration: "8n" },
+      { time: "11:0:0", note: "A2", duration: "8n" }, { time: "11:0:2", note: "E3", duration: "8n" }, { time: "11:1:0", note: "A3", duration: "8n" }, { time: "11:2:0", note: "C#4", duration: "8n" }, { time: "11:2:2", note: "A3", duration: "8n" }, { time: "11:3:0", note: "E3", duration: "8n" },
+
+      // 13-16마디 (1-4 반복)
+      { time: "12:0:0", note: "A2", duration: "8n" }, { time: "12:0:2", note: "E3", duration: "8n" }, { time: "12:1:0", note: "A3", duration: "8n" }, { time: "12:2:0", note: "C#4", duration: "8n" }, { time: "12:2:2", note: "A3", duration: "8n" }, { time: "12:3:0", note: "E3", duration: "8n" },
+      { time: "13:0:0", note: "D2", duration: "8n" }, { time: "13:0:2", note: "A2", duration: "8n" }, { time: "13:1:0", note: "D3", duration: "8n" }, { time: "13:2:0", note: "F#3", duration: "8n" }, { time: "13:2:2", note: "D3", duration: "8n" }, { time: "13:3:0", note: "A2", duration: "8n" },
+      { time: "14:0:0", note: "E2", duration: "8n" }, { time: "14:0:2", note: "B2", duration: "8n" }, { time: "14:1:0", note: "E3", duration: "8n" }, { time: "14:2:0", note: "G#3", duration: "8n" }, { time: "14:2:2", note: "E3", duration: "8n" }, { time: "14:3:0", note: "B2", duration: "8n" },
+      { time: "15:0:0", note: "A2", duration: "8n" }, { time: "15:0:2", note: "E3", duration: "8n" }, { time: "15:1:0", note: "A3", duration: "8n" }, { time: "15:2:0", note: "C#4", duration: "8n" }, { time: "15:2:2", note: "A3", duration: "8n" }, { time: "15:3:0", note: "E3", duration: "8n" },
     ];
 
     let isPlaying = false;
@@ -219,10 +251,9 @@
     const volumeSlider = document.getElementById("volumeSlider");
     const bars = document.querySelectorAll(".bar");
 
-    // 볼륨 조절 이벤트 (dB 단위 변환)
+    // 볼륨 조절
     volumeSlider.addEventListener("input", (e) => {
       const val = parseFloat(e.target.value);
-      // -30일 때는 완전히 소리 끔(Mute)
       if (val === -30) {
         Tone.Destination.mute = true;
       } else {
@@ -244,21 +275,22 @@
       setTimeout(animateVisualizer, 100);
     }
 
-    // 양손 악보 통합
+    // 악보 통합 및 강약 조절
     const score = [
-      ...rightHand.map(e => ({ ...e, velocity: 0.85 })),
-      ...leftHand.map(e => ({ ...e, velocity: 0.55 }))
+      ...rightHand.map(e => ({ ...e, velocity: 0.9 })),
+      ...leftHand.map(e => ({ ...e, velocity: 0.6 }))
     ];
 
     const part = new Tone.Part((time, event) => {
       synth.triggerAttackRelease(event.note, event.duration, time, event.velocity);
     }, score);
 
+    // 반복 재생 및 템포 설정
     part.loop = true;
-    part.loopEnd = "4:0:0";
+    part.loopEnd = "16:0:0"; // 쉼표 마디 포함 16마디
     Tone.Transport.bpm.value = 110;
 
-    // 재생 / 일시정지 컨트롤
+    // 재생 컨트롤
     playBtn.addEventListener("click", async () => {
       await Tone.start();
 
