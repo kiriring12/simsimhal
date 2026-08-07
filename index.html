@@ -9,45 +9,45 @@
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0;
-      background: linear-gradient(135deg, #111d13 0%, #203a43 50%, #2c5364 100%);
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
       font-family: 'Pretendard', -apple-system, sans-serif;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       min-height: 100vh; color: #ffffff;
     }
     .card {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.07);
       backdrop-filter: blur(16px);
       padding: 40px 32px; border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-      text-align: center; max-width: 440px; width: 90%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      text-align: center; max-width: 460px; width: 90%;
     }
     h1 { margin: 0 0 8px 0; font-size: 1.8rem; font-weight: 700; }
     p { color: #a0aec0; font-size: 0.95rem; margin: 0 0 28px 0; }
     .controls { display: flex; flex-direction: column; align-items: center; gap: 20px; }
     .btn {
-      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-      border: none; color: #05180d; padding: 16px 36px;
+      background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+      border: none; color: #ffffff; padding: 16px 36px;
       font-size: 1.05rem; font-weight: 700; border-radius: 30px;
       cursor: pointer; transition: all 0.25s ease;
-      box-shadow: 0 6px 20px rgba(56, 239, 125, 0.3); width: 100%;
+      box-shadow: 0 6px 20px rgba(0, 198, 255, 0.35); width: 100%;
     }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 239, 125, 0.45); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 198, 255, 0.5); }
     .volume-box {
       width: 100%; display: flex; align-items: center; justify-content: space-between;
       background: rgba(255, 255, 255, 0.05); padding: 12px 18px; border-radius: 16px;
     }
     .volume-box label { font-size: 0.85rem; font-weight: 600; color: #cbd5e0; }
-    .volume-box input[type="range"] { width: 65%; accent-color: #38ef7d; cursor: pointer; }
-    .status { margin-top: 20px; font-size: 0.85rem; color: #68d391; font-weight: 600; }
+    .volume-box input[type="range"] { width: 65%; accent-color: #00c6ff; cursor: pointer; }
+    .status { margin-top: 20px; font-size: 0.85rem; color: #38ef7d; font-weight: 600; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h1>Summer (Left Hand)</h1>
-    <p>1 ~ 101 마디 완곡</p>
+    <h1>Summer (Stereo Version)</h1>
+    <p>Left: 왼손 반주 | Right: 오른손 멜로디</p>
     
     <div class="controls">
       <button id="playBtn" class="btn">▶ 연주 시작</button>
@@ -58,23 +58,32 @@
       </div>
     </div>
     
-    <div id="status" class="status">🎧 이어폰 착용 권장 (왼쪽 귀 전용)</div>
+    <div id="status" class="status">🎧 이어폰/헤드폰 착용 필수 (L/R 분리 연주)</div>
   </div>
 
   <script>
-    // 1. 왼쪽 채널 전용 Panner 생성 (-1 = 완전히 왼쪽)
+    // 1. 오디오 채널 설정 (왼쪽: -1, 오른쪽: 1)
     const leftPanner = new Tone.Panner(-1).toDestination();
-    const reverb = new Tone.Reverb({ decay: 2.0, wet: 0.2 }).connect(leftPanner);
-    
-    // 동시 화음 연주를 위한 PolySynth
-    const synth = new Tone.PolySynth(Tone.Synth, {
+    const rightPanner = new Tone.Panner(1).toDestination();
+
+    const leftReverb = new Tone.Reverb({ decay: 2.0, wet: 0.2 }).connect(leftPanner);
+    const rightReverb = new Tone.Reverb({ decay: 2.2, wet: 0.25 }).connect(rightPanner);
+
+    // 왼손 전용 신시사이저 (L)
+    const leftSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
       envelope: { attack: 0.01, decay: 0.35, sustain: 0.25, release: 1.0 }
-    }).connect(reverb);
+    }).connect(leftReverb);
+
+    // 오른손 전용 신시사이저 (R)
+    const rightSynth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: "triangle" },
+      envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 1.0 }
+    }).connect(rightReverb);
 
     Tone.Destination.volume.value = -4;
 
-    // 2. 고정 반주 생성용 함수
+    // --- 2. 왼손 반주 데이터 생성 ---
     function buildPattern(measures, defaultDuration = "4", isStaccato = true) {
       let result = [];
       measures.forEach(m => {
@@ -85,15 +94,8 @@
       return result.join(' // ');
     }
 
-    // --- 악보 데이터 세그먼트 ---
-    const patternA_Measures = [
-      "B2 / F#3 / B3 / F#3", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "D2 / A2 / D3 / A2"
-    ];
-
-    const patternB_Measures = [
-      "A2 / E3 / A3 / E3", "G2 / D3 / G3 / D3", "F#2 / C#3 / A3 / C#3", "B2 / F#3 / B3 / F#3",
-      "E2 / B2 / E3 / B2", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "A2 / E3 / A3 / E3"
-    ];
+    const patternA_Measures = ["B2 / F#3 / B3 / F#3", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "D2 / A2 / D3 / A2"];
+    const patternB_Measures = ["A2 / E3 / A3 / E3", "G2 / D3 / G3 / D3", "F#2 / C#3 / A3 / C#3", "B2 / F#3 / B3 / F#3", "E2 / B2 / E3 / B2", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "A2 / E3 / A3 / E3"];
 
     let m_1_16 = [];
     for(let i=0; i<4; i++) m_1_16.push(buildPattern(patternA_Measures));
@@ -106,10 +108,7 @@
     const sec_25_32 = m_25_32.join(' // ');
 
     const sec_33_34 = "E2(4) / B2(4) / E3(4) / B2(4) // A2(1)";
-
     const sec_35_42 = "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4) // D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
-
-    // 화음(&)이 다수 들어간 43~71마디
     const sec_43_71 = "A3&F#3&D3(2) / A3&F#3&D3(2) // A3&G3&E3(2) / A3&G3&E3(2) // A3&F#3(2) / A3&F#3(2) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) // A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) // A3&F#3(4) / A3&F#3(4) / A3&F#3(4) / A3&F#3(4) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // D4&B3&G3(2) / D4&B3&G3(2) // D4&C4&A4(2) / D4&C4&A3(2) // D4&B3(2) // D4&B3(2) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) // D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) // D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // A2&A1(2) / C4&A3&E3(2) // G2&G1(2) / D4&B3&G3(2) // F#2&F#1(2) / E4&C4&F#3(2) // B2&B1(2) / D4&B3&F#3(2) // E2&E1(2) / D4&B3&G#3(2) // G2&G1(2) / D4&B3&G3(2) // A2&A1(2) / E4&A3&G3(2) // A2&A1(2) / C#4&A3&G3(2)";
 
     let m_72_79 = [];
@@ -121,12 +120,15 @@
     const sec_87_98 = sec_35_42 + " // " + "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
     const sec_99_101 = "D3(4) / A3(4) / D4(2) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D3&D2(1)";
 
-    const fullScoreText = [
+    const leftHandScoreText = [
       sec_1_16, sec_17_24, sec_25_32, sec_33_34, sec_35_42,
       sec_43_71, sec_72_79, sec_80_84, sec_85_86, sec_87_98, sec_99_101
     ].join(' // ');
 
-    // --- 화음(&) 파싱 처리 엔진 ---
+    // --- 3. 오른손 멜로디 데이터 ---
+    const rightHandScoreText = "X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(2) /  A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(8) / E5&B4(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / E5(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) //  F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G#4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(8) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(8) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8), F#5(8), E5(8)<3> / D5(8) / B4(8) // D5(2) / D5(4) / A4(4) // F#4(1) // F#4&D4(2) / D4&B3(4) / F#4(4) // E4&C4(1) // A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) //  A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) //  A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) // D4&C#4(1) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) //  A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(8) // F#5&B4&G4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / G4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8),F#5(8),E5(8)<3> / D5(8) / B4(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(4) / D6&D5(2) // C#6&C#5(3) / A6&A5(4) // B5&F#5&D5(2) / B3(8) / C#4(8) / D4(8) / E4(8) // F#4(8) / G4(8) / E4(4) / A4(8) / D5(8) / E5(8) / F#5(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // B4&G4&D4(4d) / A4&D4(8) ~ A4&D4(4) / G4&D4(4) // F#4&E4&D4(1)";
+
+    // --- 4. 통합 커스텀 파서 엔진 ---
     function parseCustomScore(scoreText) {
       const measures = scoreText.split('//');
       let events = [];
@@ -134,7 +136,7 @@
 
       measures.forEach(mText => {
         const notesRaw = mText.split('/');
-        let currentBeatInMeasure = 0; // 마디 내 박자 (4분음표 1.0 기준)
+        let currentBeatInMeasure = 0;
 
         notesRaw.forEach(nRaw => {
           let str = nRaw.trim();
@@ -146,52 +148,64 @@
             str = str.substring(1).trim();
           }
 
-          // 음계와 괄호 속성 추출
-          const match = str.match(/^([^\(]+)\(([^\)]+)\)$/);
-          if (!match) return;
-
-          const noteNameRaw = match[1].trim();
-          const attrStr = match[2].trim();
-          const attrs = attrStr.split(',').map(s => s.trim());
-          const durationVal = attrs[0]; // 1, 2, 4, 8
-          const isStaccato = attrs.includes('Staccato');
-
-          // 박자 단위 계산
-          let durUnits = 1.0;
-          if (durationVal === '1') durUnits = 4.0;
-          if (durationVal === '2') durUnits = 2.0;
-          if (durationVal === '4') durUnits = 1.0;
-          if (durationVal === '8') durUnits = 0.5;
-
-          // 시간 좌표 (마디:비트:16분위치)
-          const beatInt = Math.floor(currentBeatInMeasure);
-          const beatRem = currentBeatInMeasure - beatInt;
-          const sixteenth = Math.round(beatRem * 4);
-          const timePosition = `${currentMeasure}:${beatInt}:${sixteenth}`;
-
-          // [핵심] &로 묶인 음계들을 배열로 추출 (화음 구성)
-          let noteArray = [];
-          if (!noteNameRaw.startsWith('^')) {
-            noteArray = noteNameRaw.split('&').map(s => s.trim());
+          let isTriplet = false;
+          if (str.includes('<3>')) {
+            isTriplet = true;
+            str = str.replace('<3>', '').trim();
           }
 
-          // 음표 길이
-          let playDuration = "4n";
-          if (durationVal === '1') playDuration = "1m";
-          else if (durationVal === '2') playDuration = isStaccato ? "4n" : "2n";
-          else if (durationVal === '4') playDuration = isStaccato ? "8n" : "4n";
-          else if (durationVal === '8') playDuration = isStaccato ? "16n" : "8n";
+          const subNotes = str.split(',');
 
-          // 붙임줄(~)이 아닌 경우 타임라인 이벤트 등록
-          if (noteArray.length > 0 && !isTied) {
-            events.push({
-              time: timePosition,
-              notes: noteArray, // 배열 형태로 전달하여 화음 동시 출력
-              duration: playDuration
-            });
-          }
+          subNotes.forEach(subStr => {
+            let itemStr = subStr.trim();
+            if (!itemStr) return;
 
-          currentBeatInMeasure += durUnits;
+            const match = itemStr.match(/^([^\(]+)\(([^\)]+)\)$/);
+            if (!match) return;
+
+            const noteNameRaw = match[1].trim();
+            const attrStr = match[2].trim();
+            const attrs = attrStr.split(',').map(s => s.trim());
+            const durationVal = attrs[0]; 
+            const isStaccato = attrs.includes('Staccato');
+
+            let durUnits = 1.0;
+            if (durationVal === '1') durUnits = 4.0;
+            else if (durationVal === '2') durUnits = 2.0;
+            else if (durationVal === '3') durUnits = 3.0;
+            else if (durationVal === '4') durUnits = 1.0;
+            else if (durationVal === '8') durUnits = 0.5;
+            else if (durationVal === '4d') durUnits = 1.5;
+
+            if (isTriplet) {
+              durUnits = durUnits * (2 / 3);
+            }
+
+            const beatInt = Math.floor(currentBeatInMeasure);
+            const beatRem = currentBeatInMeasure - beatInt;
+            const sixteenth = Math.round(beatRem * 4);
+            const timePosition = `${currentMeasure}:${beatInt}:${sixteenth}`;
+
+            let noteArray = [];
+            if (!noteNameRaw.startsWith('^') && !noteNameRaw.startsWith('X')) {
+              noteArray = noteNameRaw.split('&').map(s => s.trim());
+            }
+
+            let playDuration = durUnits * 0.9 * (60 / 112); 
+            if (isStaccato) {
+              playDuration = durUnits * 0.4 * (60 / 112);
+            }
+
+            if (noteArray.length > 0 && !isTied) {
+              events.push({
+                time: timePosition,
+                notes: noteArray,
+                duration: playDuration
+              });
+            }
+
+            currentBeatInMeasure += durUnits;
+          });
         });
 
         currentMeasure++;
@@ -200,16 +214,25 @@
       return events;
     }
 
-    const parsedEvents = parseCustomScore(fullScoreText);
+    // 5. 파싱 및 양손 Part 등록
+    const leftEvents = parseCustomScore(leftHandScoreText);
+    const rightEvents = parseCustomScore(rightHandScoreText);
 
-    // Tone.Part 등록 (notes 배열을 그대로 triggerAttackRelease에 전달하여 동시 연주)
-    const part = new Tone.Part((time, event) => {
-      synth.triggerAttackRelease(event.notes, event.duration, time, 0.7);
-    }, parsedEvents);
+    // 왼손 연주 파트 (L)
+    const leftPart = new Tone.Part((time, event) => {
+      leftSynth.triggerAttackRelease(event.notes, event.duration, time, 0.7);
+    }, leftEvents);
 
-    part.loop = false;
-    Tone.Transport.bpm.value = 112;
+    // 오른손 연주 파트 (R)
+    const rightPart = new Tone.Part((time, event) => {
+      rightSynth.triggerAttackRelease(event.notes, event.duration, time, 0.85);
+    }, rightEvents);
 
+    leftPart.loop = false;
+    rightPart.loop = false;
+    Tone.Transport.bpm.value = 112; // Summer 원곡 템포
+
+    // 6. 재생 제어
     let isPlaying = false;
     const playBtn = document.getElementById("playBtn");
     const volumeSlider = document.getElementById("volumeSlider");
@@ -229,7 +252,8 @@
 
       if (!isPlaying) {
         Tone.Transport.start();
-        part.start(0);
+        leftPart.start(0);
+        rightPart.start(0);
         isPlaying = true;
         playBtn.innerText = "❚❚ 일시정지";
       } else {
