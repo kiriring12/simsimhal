@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer - Keyboard Control Piano</title>
+  <title>Summer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +22,6 @@
     h1 { color: #58a6ff; font-size: 1.6rem; margin-bottom: 8px; }
     p { font-size: 0.9rem; color: #8b949e; margin-bottom: 24px; }
 
-    /* 키보드 가이드 표시 */
     .key-guide {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
       margin-bottom: 24px;
@@ -39,7 +38,6 @@
     .key-box .label { font-size: 0.78rem; color: #8b949e; }
     .key-box.active { border-color: #238636; background: #1c2d22; }
 
-    /* 상태 창 */
     .status-display {
       background: #0d1117; border: 1px solid #30363d;
       border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;
@@ -102,21 +100,21 @@
   </div>
 
   <script>
-    // 1. 오디오 노드 구축
-    const leftPanner = new Tone.Panner(-1).toDestination();
-    const rightPanner = new Tone.Panner(1).toDestination();
+    // 1. 오디오 노드 구축 (Channel 노드 사용으로 안정성 강화)
+    const leftChannel = new Tone.Channel({ pan: -1, volume: 0 }).toDestination();
+    const rightChannel = new Tone.Channel({ pan: 1, volume: 0 }).toDestination();
 
     const leftSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
       envelope: { attack: 0.01, decay: 0.35, sustain: 0.25, release: 1.0 }
-    }).connect(leftPanner);
+    }).connect(leftChannel);
 
     const rightSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
       envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 1.0 }
-    }).connect(rightPanner);
+    }).connect(rightChannel);
 
-    Tone.Destination.volume.value = -4;
+    Tone.Destination.volume.value = -2;
 
     // --- 왼손 악보 데이터 ---
     function buildPattern(measures, defaultDuration = "4", isStaccato = true) {
@@ -251,12 +249,12 @@
       return events;
     }
 
-    // 파싱 등록
+    // 파싱 및 파트 스케줄링
     const leftEvents = parseCustomScore(leftHandScoreText);
     const rightEvents = parseCustomScore(rightHandScoreText);
 
     const leftPart = new Tone.Part((time, event) => {
-      leftSynth.triggerAttackRelease(event.notes, event.duration, time, 0.75);
+      leftSynth.triggerAttackRelease(event.notes, event.duration, time, 0.85);
     }, leftEvents);
 
     const rightPart = new Tone.Part((time, event) => {
@@ -267,10 +265,10 @@
     rightPart.loop = false;
     Tone.Transport.bpm.value = 112;
 
-    // --- 상태 데이터 관리 (기본값: 모두 ON, L/R 분리) ---
+    // --- 상태 관리 ---
     let stateLeft = true;
     let stateRight = true;
-    let isStereo = true; // true: L/R 분리, false: 중앙 모노
+    let isStereo = true;
 
     const boxQ = document.getElementById("boxQ");
     const boxW = document.getElementById("boxW");
@@ -281,41 +279,39 @@
 
     function updateAudioAndUI() {
       // 왼손 제어
+      leftChannel.mute = !stateLeft;
       if (stateLeft) {
-        leftSynth.volume.value = 0;
         stLeft.innerText = "ON";
         stLeft.className = "val-on";
         boxQ.classList.add("active");
       } else {
-        leftSynth.volume.value = -100;
         stLeft.innerText = "OFF";
         stLeft.className = "val-off";
         boxQ.classList.remove("active");
       }
 
       // 오른손 제어
+      rightChannel.mute = !stateRight;
       if (stateRight) {
-        rightSynth.volume.value = 0;
         stRight.innerText = "ON";
         stRight.className = "val-on";
         boxE.classList.add("active");
       } else {
-        rightSynth.volume.value = -100;
         stRight.innerText = "OFF";
         stRight.className = "val-off";
         boxE.classList.remove("active");
       }
 
-      // L/R 분리 또는 중앙 모노 제어
+      // Stereo / Mono 제어
       if (isStereo) {
-        leftPanner.pan.value = -1;
-        rightPanner.pan.value = 1;
+        leftChannel.pan.value = -1;
+        rightChannel.pan.value = 1;
         stMode.innerText = "좌우 분리 (Stereo)";
         stMode.style.color = "#58a6ff";
         boxW.classList.add("active");
       } else {
-        leftPanner.pan.value = 0;
-        rightPanner.pan.value = 0;
+        leftChannel.pan.value = 0;
+        rightChannel.pan.value = 0;
         stMode.innerText = "중앙 모노 (Mono)";
         stMode.style.color = "#d29922";
         boxW.classList.remove("active");
@@ -323,7 +319,7 @@
     }
 
     // --- 키보드 이벤트 리스너 ---
-    window.addEventListener("keydown", async (e) => {
+    window.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
 
       if (key === "q") {
