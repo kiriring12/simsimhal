@@ -3,92 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer</title>
+  <title>Summer - Keyboard Control Piano</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #121212;
+      background: #0d1117; color: #c9d1d9;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex; justify-content: center; align-items: center;
-      min-height: 100vh; color: #ffffff; padding: 20px;
+      min-height: 100vh; padding: 20px;
     }
-    .container {
-      background: #1e1e24;
-      padding: 30px 24px; border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      text-align: center; max-width: 440px; width: 100%;
+    .panel {
+      background: #161b22; border: 1px solid #30363d;
+      border-radius: 16px; padding: 32px 24px;
+      max-width: 480px; width: 100%; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
-    h1 { font-size: 1.6rem; margin-bottom: 8px; color: #4facfe; }
-    p { font-size: 0.9rem; color: #a0aec0; margin-bottom: 24px; }
-    
-    /* 채널 선택 버튼 영역 */
-    .btn-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-      margin-bottom: 20px;
-    }
-    .channel-btn {
-      background: #2a2a36; border: 2px solid #3f3f52;
-      color: #ffffff; padding: 12px 8px; font-size: 0.9rem; font-weight: bold;
-      border-radius: 12px; cursor: pointer; transition: 0.2s;
-    }
-    .channel-btn.active {
-      background: #0072ff; border-color: #00c6ff;
-      box-shadow: 0 0 12px rgba(0, 198, 255, 0.5);
-    }
+    h1 { color: #58a6ff; font-size: 1.6rem; margin-bottom: 8px; }
+    p { font-size: 0.9rem; color: #8b949e; margin-bottom: 24px; }
 
-    /* 메인 연주 버튼 */
+    /* 키보드 가이드 표시 */
+    .key-guide {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-bottom: 24px;
+    }
+    .key-box {
+      background: #21262d; border: 1px solid #30363d;
+      border-radius: 10px; padding: 12px 8px;
+    }
+    .key-box .key {
+      display: inline-block; background: #30363d; color: #f0f6fc;
+      font-weight: bold; padding: 4px 10px; border-radius: 6px;
+      font-size: 1rem; border-bottom: 3px solid #161b22; margin-bottom: 6px;
+    }
+    .key-box .label { font-size: 0.78rem; color: #8b949e; }
+    .key-box.active { border-color: #238636; background: #1c2d22; }
+
+    /* 상태 창 */
+    .status-display {
+      background: #0d1117; border: 1px solid #30363d;
+      border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;
+    }
+    .status-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.9rem; margin-bottom: 6px;
+    }
+    .status-row:last-child { margin-bottom: 0; }
+    .val-on { color: #3fb950; font-weight: bold; }
+    .val-off { color: #f85149; font-weight: bold; }
+
     .play-btn {
-      background: #00b09b; background: linear-gradient(to right, #96c93d, #00b09b);
-      border: none; color: #000; padding: 16px; font-size: 1.1rem; font-weight: bold;
-      border-radius: 30px; cursor: pointer; width: 100%; margin-bottom: 20px;
-      box-shadow: 0 5px 15px rgba(0, 176, 155, 0.4);
+      background: #238636; color: #ffffff; border: none;
+      padding: 14px; font-size: 1rem; font-weight: bold;
+      border-radius: 8px; cursor: pointer; width: 100%; transition: 0.2s;
     }
-    .play-btn:active { transform: scale(0.98); }
-
-    /* 볼륨 조절 */
-    .volume-container {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #2a2a36; padding: 10px 16px; border-radius: 12px;
-    }
-    .volume-container label { font-size: 0.85rem; font-weight: bold; }
-    .volume-container input { width: 65%; accent-color: #00b09b; }
-
-    .status-box {
-      margin-top: 16px; font-size: 0.85rem; color: #00ffcc; font-weight: bold;
-    }
+    .play-btn:hover { background: #2ea043; }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="panel">
     <h1>Summer (피아노 연주기)</h1>
-    <p>채널 선택 버튼으로 들어볼 파트를 고르세요</p>
+    <p>키보드로 소리를 자유롭게 켜고 꺼보세요</p>
 
-    <!-- 채널 선택 버튼 3개 + 양손 모드 -->
-    <div class="btn-grid">
-      <button id="btnBoth" class="channel-btn active">🎧 양손 입체 (L/R)</button>
-      <button id="btnMono" class="channel-btn">📻 양손 같이 (중앙)</button>
-      <button id="btnLeft" class="channel-btn">👈 왼손(베이스)만</button>
-      <button id="btnRight" class="channel-btn">👉 오른손(멜로디)만</button>
+    <!-- 키보드 조작 안내 -->
+    <div class="key-guide">
+      <div id="boxQ" class="key-box active">
+        <span class="key">Q</span>
+        <div class="label">왼손 (베이스)</div>
+      </div>
+      <div id="boxW" class="key-box active">
+        <span class="key">W</span>
+        <div class="label">좌우 분리</div>
+      </div>
+      <div id="boxE" class="key-box active">
+        <span class="key">E</span>
+        <div class="label">오른손 (멜로디)</div>
+      </div>
     </div>
 
-    <!-- 재생 버튼 -->
-    <button id="playBtn" class="play-btn">▶ 연주 시작</button>
-
-    <!-- 볼륨 스라이더 -->
-    <div class="volume-container">
-      <label for="volumeSlider">🔊 볼륨</label>
-      <input type="range" id="volumeSlider" min="-30" max="6" value="-4" step="1">
+    <!-- 실시간 상태 표시 -->
+    <div class="status-display">
+      <div class="status-row">
+        <span>👈 왼손 (L-Channel):</span>
+        <span id="stLeft" class="val-on">ON</span>
+      </div>
+      <div class="status-row">
+        <span>👉 오른손 (R-Channel):</span>
+        <span id="stRight" class="val-on">ON</span>
+      </div>
+      <div class="status-row">
+        <span>📻 채널 위치:</span>
+        <span id="stMode" class="val-on" style="color:#58a6ff;">좌우 분리 (Stereo)</span>
+      </div>
     </div>
 
-    <div id="statusText" class="status-box">🎧 양손 입체 모드 (L: 왼손 / R: 오른손)</div>
+    <button id="playBtn" class="play-btn">▶ 연주 시작 (Spacebar)</button>
   </div>
 
   <script>
-    // 1. 오디오 기본 노드 구성
-    const leftPanner = new Tone.Panner(-1).toDestination();  // 왼쪽 완전 분리
-    const rightPanner = new Tone.Panner(1).toDestination();  // 오른쪽 완전 분리
+    // 1. 오디오 노드 구축
+    const leftPanner = new Tone.Panner(-1).toDestination();
+    const rightPanner = new Tone.Panner(1).toDestination();
 
     const leftSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
@@ -147,7 +163,7 @@
     // --- 오른손 악보 데이터 ---
     const rightHandScoreText = "X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(1) // X(2) /  A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(8) / E5&B4(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / E5(8) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) //  F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G#4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(8) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8), F#5(8), E5(8)<3> / D5(8) / B4(8) // D5(2) / D5(4) / A4(4) // F#4(1) // F#4&D4(2) / D4&B3(4) / F#4(4) // E4&C4(1) // A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) //  A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) //  A4&F#4&E4&D4(2) / A4&F#4&D4(4) / E4(8) / D4(8) // D4&C#4(1) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) //  A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // D6(8) / D5(8) / G5(8) / A5(8) / D6(8) / A5(8) / G5(8) / D5(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5(8) / A4(8) / D5(8) / E5(8) / A5(8) / E5(8) / D5(8) / A4(8) // A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5&A4(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(8) // F#5&B4&G4(4) / B5(4) / B5&E5(8),F#5(8),E5(8)<3> / D5(4) // E5(2) / E5&B4&G4(4) / B4(8) / B4(8) // E5&G4(4) / C#5(4) / G4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / E5(8) ~ E5(8) / F#5(4) / F#5(8) ~// F#5(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // ^(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(8) / D5(8) / E5(8) ~ E5(8) / A5(4) / F#5(8) ~// F#5(2) / F#5&A4(4) / G5&B4(4) // A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&B4(4) / F#5(8) / D5(8) ~ D5(4) / F#5(8) / G5(8) //   A5&C#5(4) / A5&C#5(8) / A5&C#5(8) ~ A5&C#5(4) / A5&C#5(4) // A5&D5(4) / F#5(8) / D5(8) ~ D5(4) / D5(8) / E5(8) // F#5&B4&G#4(4) / F#5(8) / F#5(8) ~ F#5(4) / F#5(4) // F#5&B4&G4(2) / B5&E5(8),F#5(8),E5(8)<3> / D5(8) / B4(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(4) / D6&D5(2) // C#6&C#5(3) / A6&A5(4) // B5&F#5&D5(2) / B3(8) / C#4(8) / D4(8) / E4(8) // F#4(8) / G4(8) / E4(4) / A4(8) / D5(8) / E5(8) / F#5(8) // D5(2) / D6(2) // C#6&C#5(3) / A5&A4(4) // F#5&F#4(2) / D4&B3(4) / F#4(4) // E4&C#4(2) / A4(8) / D5(8) / E5(8) / F#5(8) // E5(4) / D5(8) / D5(8) ~ D5(2) // B4&G4&D4(4d) / A4&D4(8) ~ A4&D4(4) / G4&D4(4) // F#4&E4&D4(1)";
 
-    // --- 이음표 및 박자 완전 수정 파서 ---
+    // --- 커스텀 파서 ---
     function parseCustomScore(scoreText) {
       const measures = scoreText.split('//');
       let events = [];
@@ -215,7 +231,6 @@
               playDuration = durUnits * 0.45 * (60 / 112);
             }
 
-            // [이음표 처리]: 이전 노트의 박자를 연장시킴
             if (isTied && events.length > 0) {
               events[events.length - 1].duration += playDuration;
             } else if (noteArray.length > 0) {
@@ -236,7 +251,7 @@
       return events;
     }
 
-    // 데이터 등록
+    // 파싱 등록
     const leftEvents = parseCustomScore(leftHandScoreText);
     const rightEvents = parseCustomScore(rightHandScoreText);
 
@@ -252,68 +267,85 @@
     rightPart.loop = false;
     Tone.Transport.bpm.value = 112;
 
-    // --- 버튼 이벤트 핸들러 ---
-    const btnBoth = document.getElementById("btnBoth");
-    const btnMono = document.getElementById("btnMono");
-    const btnLeft = document.getElementById("btnLeft");
-    const btnRight = document.getElementById("btnRight");
-    const statusText = document.getElementById("statusText");
+    // --- 상태 데이터 관리 (기본값: 모두 ON, L/R 분리) ---
+    let stateLeft = true;
+    let stateRight = true;
+    let isStereo = true; // true: L/R 분리, false: 중앙 모노
 
-    function setBtnActive(activeBtn) {
-      [btnBoth, btnMono, btnLeft, btnRight].forEach(b => b.classList.remove("active"));
-      activeBtn.classList.add("active");
+    const boxQ = document.getElementById("boxQ");
+    const boxW = document.getElementById("boxW");
+    const boxE = document.getElementById("boxE");
+    const stLeft = document.getElementById("stLeft");
+    const stRight = document.getElementById("stRight");
+    const stMode = document.getElementById("stMode");
+
+    function updateAudioAndUI() {
+      // 왼손 제어
+      if (stateLeft) {
+        leftSynth.volume.value = 0;
+        stLeft.innerText = "ON";
+        stLeft.className = "val-on";
+        boxQ.classList.add("active");
+      } else {
+        leftSynth.volume.value = -100;
+        stLeft.innerText = "OFF";
+        stLeft.className = "val-off";
+        boxQ.classList.remove("active");
+      }
+
+      // 오른손 제어
+      if (stateRight) {
+        rightSynth.volume.value = 0;
+        stRight.innerText = "ON";
+        stRight.className = "val-on";
+        boxE.classList.add("active");
+      } else {
+        rightSynth.volume.value = -100;
+        stRight.innerText = "OFF";
+        stRight.className = "val-off";
+        boxE.classList.remove("active");
+      }
+
+      // L/R 분리 또는 중앙 모노 제어
+      if (isStereo) {
+        leftPanner.pan.value = -1;
+        rightPanner.pan.value = 1;
+        stMode.innerText = "좌우 분리 (Stereo)";
+        stMode.style.color = "#58a6ff";
+        boxW.classList.add("active");
+      } else {
+        leftPanner.pan.value = 0;
+        rightPanner.pan.value = 0;
+        stMode.innerText = "중앙 모노 (Mono)";
+        stMode.style.color = "#d29922";
+        boxW.classList.remove("active");
+      }
     }
 
-    btnBoth.addEventListener("click", () => {
-      setBtnActive(btnBoth);
-      leftPanner.pan.value = -1;
-      rightPanner.pan.value = 1;
-      leftSynth.volume.value = 0;
-      rightSynth.volume.value = 0;
-      statusText.innerText = "🎧 양손 입체 모드 (L: 왼손 / R: 오른손)";
-    });
+    // --- 키보드 이벤트 리스너 ---
+    window.addEventListener("keydown", async (e) => {
+      const key = e.key.toLowerCase();
 
-    btnMono.addEventListener("click", () => {
-      setBtnActive(btnMono);
-      leftPanner.pan.value = 0;
-      rightPanner.pan.value = 0;
-      leftSynth.volume.value = 0;
-      rightSynth.volume.value = 0;
-      statusText.innerText = "📻 양손 중앙 모드 (구분 없이 같이 출력)";
-    });
-
-    btnLeft.addEventListener("click", () => {
-      setBtnActive(btnLeft);
-      leftPanner.pan.value = -1;
-      leftSynth.volume.value = 0;
-      rightSynth.volume.value = -100; // 오른손 끄기
-      statusText.innerText = "👈 왼손(베이스)만 들리기";
-    });
-
-    btnRight.addEventListener("click", () => {
-      setBtnActive(btnRight);
-      rightPanner.pan.value = 1;
-      rightSynth.volume.value = 0;
-      leftSynth.volume.value = -100; // 왼손 끄기
-      statusText.innerText = "👉 오른손(멜로디)만 들리기";
-    });
-
-    // --- 연주 시작/정지 ---
-    let isPlaying = false;
-    const playBtn = document.getElementById("playBtn");
-    const volumeSlider = document.getElementById("volumeSlider");
-
-    volumeSlider.addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value);
-      if (val === -30) {
-        Tone.Destination.mute = true;
-      } else {
-        Tone.Destination.mute = false;
-        Tone.Destination.volume.value = val;
+      if (key === "q") {
+        stateLeft = !stateLeft;
+        updateAudioAndUI();
+      } else if (key === "e") {
+        stateRight = !stateRight;
+        updateAudioAndUI();
+      } else if (key === "w") {
+        isStereo = !isStereo;
+        updateAudioAndUI();
+      } else if (key === " " || key === "spacebar") {
+        e.preventDefault();
+        togglePlay();
       }
     });
 
-    playBtn.addEventListener("click", async () => {
+    // --- 재생 제어 ---
+    let isPlaying = false;
+    const playBtn = document.getElementById("playBtn");
+
+    async function togglePlay() {
       await Tone.start();
 
       if (!isPlaying) {
@@ -321,13 +353,17 @@
         leftPart.start(0);
         rightPart.start(0);
         isPlaying = true;
-        playBtn.innerText = "❚❚ 일시정지";
+        playBtn.innerText = "❚❚ 일시정지 (Spacebar)";
+        playBtn.style.background = "#da3633";
       } else {
         Tone.Transport.stop();
         isPlaying = false;
-        playBtn.innerText = "▶ 연주 시작";
+        playBtn.innerText = "▶ 연주 시작 (Spacebar)";
+        playBtn.style.background = "#238636";
       }
-    });
+    }
+
+    playBtn.addEventListener("click", togglePlay);
   </script>
 </body>
 </html>
