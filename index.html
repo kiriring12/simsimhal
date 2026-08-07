@@ -3,51 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer - Hisaishi Joe</title>
+  <title>Summer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0;
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      background: linear-gradient(135deg, #111d13 0%, #203a43 50%, #2c5364 100%);
       font-family: 'Pretendard', -apple-system, sans-serif;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      min-height: 100vh; color: #2c3e50;
+      min-height: 100vh; color: #ffffff;
     }
     .card {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(16px);
       padding: 40px 32px; border-radius: 28px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-      text-align: center; max-width: 400px; width: 90%;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      text-align: center; max-width: 440px; width: 90%;
     }
-    h1 { margin: 0 0 8px 0; font-size: 1.9rem; font-weight: 700; }
-    p { color: #666; font-size: 0.95rem; margin: 0 0 28px 0; }
+    h1 { margin: 0 0 8px 0; font-size: 1.8rem; font-weight: 700; }
+    p { color: #a0aec0; font-size: 0.95rem; margin: 0 0 28px 0; }
     .controls { display: flex; flex-direction: column; align-items: center; gap: 20px; }
     .btn {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      border: none; color: white; padding: 14px 36px;
-      font-size: 1.05rem; font-weight: 600; border-radius: 30px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      border: none; color: #05180d; padding: 16px 36px;
+      font-size: 1.05rem; font-weight: 700; border-radius: 30px;
       cursor: pointer; transition: all 0.25s ease;
-      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.35); width: 100%;
+      box-shadow: 0 6px 20px rgba(56, 239, 125, 0.3); width: 100%;
     }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 239, 125, 0.45); }
     .volume-box {
       width: 100%; display: flex; align-items: center; justify-content: space-between;
-      background: rgba(0, 0, 0, 0.04); padding: 12px 18px; border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05); padding: 12px 18px; border-radius: 16px;
     }
-    .volume-box label { font-size: 0.85rem; font-weight: 600; color: #555; }
-    .volume-box input[type="range"] { width: 65%; accent-color: #4facfe; cursor: pointer; }
-    .visualizer { display: flex; justify-content: center; align-items: flex-end; gap: 6px; height: 40px; margin-top: 24px; }
-    .bar { width: 7px; height: 8px; background-color: #4facfe; border-radius: 4px; transition: height 0.12s ease; }
+    .volume-box label { font-size: 0.85rem; font-weight: 600; color: #cbd5e0; }
+    .volume-box input[type="range"] { width: 65%; accent-color: #38ef7d; cursor: pointer; }
+    .status { margin-top: 20px; font-size: 0.85rem; color: #68d391; font-weight: 600; }
   </style>
 </head>
 <body>
 
   <div class="card">
     <h1>Summer</h1>
-    <p>Joe Hisaishi</p>
+    <p>1 ~ 101 마디 완곡 (Left Channel Panned)</p>
     
     <div class="controls">
       <button id="playBtn" class="btn">▶ 연주 시작</button>
@@ -58,173 +58,181 @@
       </div>
     </div>
     
-    <div class="visualizer">
-      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-    </div>
+    <div id="status" class="status">🎧 이어폰 착용 권장 (왼쪽 귀 집중)</div>
   </div>
 
   <script>
-    const reverb = new Tone.Reverb({ decay: 2.2, wet: 0.25 }).toDestination();
+    // 1. 왼쪽 채널 전용 Panner 생성 (-1 = 완전히 왼쪽)
+    const leftPanner = new Tone.Panner(-1).toDestination();
+    const reverb = new Tone.Reverb({ decay: 2.0, wet: 0.2 }).connect(leftPanner);
     
+    // 피아노 신시사이저 (왼쪽 Panner로 연결)
     const synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "triangle" },
-      envelope: { attack: 0.01, decay: 0.35, sustain: 0.25, release: 1.2 }
+      envelope: { attack: 0.01, decay: 0.35, sustain: 0.25, release: 1.0 }
     }).connect(reverb);
 
     Tone.Destination.volume.value = -4;
 
-    // [왼손] (시-파#-시-파# / 솔-레-솔-레 / 라-미-라-미 / 레-라-레-라)
-    function createPinkPianoArpeggio(m, type) {
-      const beats = ["0:0", "1:0", "2:0", "3:0"];
-      let notes = [];
-      if (type === 'Bm') notes = ["B2", "F#3", "B3", "F#3"];
-      if (type === 'G')  notes = ["G2", "D3", "G3", "D3"];
-      if (type === 'A')  notes = ["A2", "E3", "A3", "E3"];
-      if (type === 'D')  notes = ["D2", "A2", "D3", "A2"];
-
-      return beats.map((b, i) => ({
-        time: `${m}:${b}`,
-        note: notes[i],
-        duration: "4n"
-      }));
+    // 2. 고정 반주 생성용 유틸리티 함수
+    function buildPattern(measures, defaultDuration = "4", isStaccato = true) {
+      let result = [];
+      measures.forEach(m => {
+        const notes = m.split('/');
+        const durStr = isStaccato ? `(${defaultDuration},Staccato)` : `(${defaultDuration})`;
+        result.push(notes.map(n => `${n.trim()}${durStr}`).join(' / '));
+      });
+      return result.join(' // ');
     }
 
-    // 20마디 분량의 왼손 고정 패턴 자동 생성
-    const leftHand = [];
-    for (let m = 0; m < 20; m += 4) {
-      leftHand.push(
-        ...createPinkPianoArpeggio(m, 'Bm'),
-        ...createPinkPianoArpeggio(m + 1, 'G'),
-        ...createPinkPianoArpeggio(m + 2, 'A'),
-        ...createPinkPianoArpeggio(m + 3, 'D')
-      );
-    }
+    // --- 커스텀 악보 데이터 구성 (1 ~ 101 마디 완곡) ---
 
-    // [오른손] 멜로디
-    const rightHand = [
-      // --- Intro 오프닝 (1~4마디) ---
-      { time: "0:0:0", note: "F#5", duration: "16n" }, { time: "0:0:1", note: "G5", duration: "16n" }, { time: "0:0:2", note: "A5", duration: "8n" },
-      { time: "0:1:0", note: "F#5", duration: "16n" }, { time: "0:1:1", note: "G5", duration: "16n" }, { time: "0:1:2", note: "A5", duration: "8n" },
-      { time: "0:2:0", note: "F#5", duration: "16n" }, { time: "0:2:1", note: "G5", duration: "16n" }, { time: "0:2:2", note: "A5", duration: "8n" },
-      { time: "0:3:0", note: "F#5", duration: "16n" }, { time: "0:3:1", note: "G5", duration: "16n" }, { time: "0:3:2", note: "A5", duration: "8n" },
-
-      { time: "1:0:0", note: "F#5", duration: "16n" }, { time: "1:0:1", note: "G5", duration: "16n" }, { time: "1:0:2", note: "A5", duration: "8n" },
-      { time: "1:1:0", note: "F#5", duration: "16n" }, { time: "1:1:1", note: "G5", duration: "16n" }, { time: "1:1:2", note: "A5", duration: "8n" },
-      { time: "1:2:0", note: "F#5", duration: "16n" }, { time: "1:2:1", note: "G5", duration: "16n" }, { time: "1:2:2", note: "A5", duration: "8n" },
-      { time: "1:3:0", note: "F#5", duration: "16n" }, { time: "1:3:1", note: "G5", duration: "16n" }, { time: "1:3:2", note: "A5", duration: "8n" },
-
-      // --- 메인 테마 1차 (5~8마디) ---
-      { time: "4:0:0", note: "A4", duration: "8n" },
-      { time: "4:0:2", note: "D5", duration: "8n" },
-      { time: "4:1:0", note: "E5", duration: "8n" },
-      { time: "4:1:2", note: "F#5", duration: "8n" },
-      { time: "4:2:0", note: "E5", duration: "8n" },
-      { time: "4:2:2", note: "D5", duration: "8n" },
-      { time: "4:3:0", note: "E5", duration: "4n" },
-
-      { time: "5:0:0", note: "F#5", duration: "4n" },
-      { time: "5:1:0", note: "F#5", duration: "8n" },
-      { time: "5:1:2", note: "F#5", duration: "8n" },
-      { time: "5:2:0", note: "E5", duration: "8n" },
-      { time: "5:2:2", note: "D5", duration: "8n" },
-      { time: "5:3:0", note: "E5", duration: "4n" },
-
-      { time: "6:0:0", note: "D5", duration: "8n" },
-      { time: "6:0:2", note: "E5", duration: "8n" },
-      { time: "6:1:0", note: "F#5", duration: "8n" },
-      { time: "6:1:2", note: "E5", duration: "8n" },
-      { time: "6:2:0", note: "D5", duration: "8n" },
-      { time: "6:2:2", note: "B4", duration: "8n" },
-      { time: "6:3:0", note: "A4", duration: "4n" },
-
-      { time: "7:0:0", note: "A4", duration: "8n" },
-      { time: "7:0:2", note: "D5", duration: "8n" },
-      { time: "7:1:0", note: "E5", duration: "8n" },
-      { time: "7:1:2", note: "F#5", duration: "2n" },
-
-      // --- 메인 테마 2차 변형 (9~12마디) ---
-      { time: "8:0:0", note: "A4", duration: "8n" },
-      { time: "8:0:2", note: "D5", duration: "8n" },
-      { time: "8:1:0", note: "E5", duration: "8n" },
-      { time: "8:1:2", note: "F#5", duration: "8n" },
-      { time: "8:2:0", note: "E5", duration: "8n" },
-      { time: "8:2:2", note: "D5", duration: "8n" },
-      { time: "8:3:0", note: "E5", duration: "4n" },
-
-      { time: "9:0:0", note: "F#5", duration: "4n" },
-      { time: "9:1:0", note: "F#5", duration: "8n" },
-      { time: "9:1:2", note: "F#5", duration: "8n" },
-      { time: "9:2:0", note: "E5", duration: "8n" },
-      { time: "9:2:2", note: "D5", duration: "8n" },
-      { time: "9:3:0", note: "E5", duration: "4n" },
-
-      { time: "10:0:0", note: "D5", duration: "8n" },
-      { time: "10:0:2", note: "E5", duration: "8n" },
-      { time: "10:1:0", note: "F#5", duration: "8n" },
-      { time: "10:1:2", note: "E5", duration: "8n" },
-      { time: "10:2:0", note: "D5", duration: "8n" },
-      { time: "10:2:2", note: "B4", duration: "8n" },
-      { time: "10:3:0", note: "A4", duration: "4n" },
-
-      { time: "11:0:0", note: "D5", duration: "1m" },
-
-      // --- B파트 전환부 (13~16마디) ---
-      { time: "12:0:0", note: "F#5", duration: "8n" },
-      { time: "12:0:2", note: "A5", duration: "8n" },
-      { time: "12:1:0", note: "F#5", duration: "8n" },
-      { time: "12:1:2", note: "D5", duration: "8n" },
-      { time: "12:2:0", note: "E5", duration: "4n" },
-      { time: "12:3:0", note: "C#5", duration: "4n" },
-
-      { time: "13:0:0", note: "D5", duration: "8n" },
-      { time: "13:0:2", note: "F#5", duration: "8n" },
-      { time: "13:1:0", note: "D5", duration: "8n" },
-      { time: "13:1:2", note: "B4", duration: "8n" },
-      { time: "13:2:0", note: "C#5", duration: "4n" },
-      { time: "13:3:0", note: "A4", duration: "4n" },
-
-      { time: "14:0:0", note: "B4", duration: "8n" },
-      { time: "14:0:2", note: "D5", duration: "8n" },
-      { time: "14:1:0", note: "F#5", duration: "8n" },
-      { time: "14:1:2", note: "E5", duration: "8n" },
-      { time: "14:2:0", note: "D5", duration: "8n" },
-      { time: "14:2:2", note: "C#5", duration: "8n" },
-      { time: "14:3:0", note: "B4", duration: "4n" },
-
-      { time: "15:0:0", note: "A4", duration: "1m" },
-
-      // --- 마무리 (17~20마디) ---
-      { time: "16:0:0", note: "A4", duration: "8n" },
-      { time: "16:0:2", note: "D5", duration: "8n" },
-      { time: "16:1:0", note: "E5", duration: "8n" },
-      { time: "16:1:2", note: "F#5", duration: "8n" },
-      { time: "16:2:0", note: "E5", duration: "8n" },
-      { time: "16:2:2", note: "D5", duration: "8n" },
-      { time: "16:3:0", note: "E5", duration: "4n" },
-
-      { time: "17:0:0", note: "F#5", duration: "4n" },
-      { time: "17:1:0", note: "F#5", duration: "8n" },
-      { time: "17:1:2", note: "F#5", duration: "8n" },
-      { time: "17:2:0", note: "E5", duration: "8n" },
-      { time: "17:2:2", note: "D5", duration: "8n" },
-      { time: "17:3:0", note: "E5", duration: "4n" },
-
-      { time: "18:0:0", note: "D5", duration: "8n" },
-      { time: "18:0:2", note: "E5", duration: "8n" },
-      { time: "18:1:0", note: "F#5", duration: "8n" },
-      { time: "18:1:2", note: "E5", duration: "8n" },
-      { time: "18:2:0", note: "D5", duration: "8n" },
-      { time: "18:2:2", note: "B4", duration: "8n" },
-      { time: "18:3:0", note: "A4", duration: "4n" },
-
-      { time: "19:0:0", note: "D5", duration: "1m" }
+    // 패턴 A (B2 / F#3 / B3 / F#3 // G2 / D3 / G3 / D3 // A2 / E3 / A3 / E3 // D2 / A2 / D3 / A2)
+    const patternA_Measures = [
+      "B2 / F#3 / B3 / F#3", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "D2 / A2 / D3 / A2"
     ];
 
+    // 패턴 B (A2 / E3 / A3 / E3 // G2 / D3 / G3 / D3 // F#2 / C#3 / A3 / C#3 ...)
+    const patternB_Measures = [
+      "A2 / E3 / A3 / E3", "G2 / D3 / G3 / D3", "F#2 / C#3 / A3 / C#3", "B2 / F#3 / B3 / F#3",
+      "E2 / B2 / E3 / B2", "G2 / D3 / G3 / D3", "A2 / E3 / A3 / E3", "A2 / E3 / A3 / E3"
+    ];
+
+    // 1~16마디 (패턴 A x 4회)
+    let m_1_16 = [];
+    for(let i=0; i<4; i++) m_1_16.push(buildPattern(patternA_Measures));
+    const sec_1_16 = m_1_16.join(' // ');
+
+    // 17~24마디 (패턴 B)
+    const sec_17_24 = buildPattern(patternB_Measures);
+
+    // 25~32마디 (패턴 A x 2회)
+    let m_25_32 = [];
+    for(let i=0; i<2; i++) m_25_32.push(buildPattern(patternA_Measures));
+    const sec_25_32 = m_25_32.join(' // ');
+
+    // 33~34마디
+    const sec_33_34 = "E2(4) / B2(4) / E3(4) / B2(4) // A2(1)";
+
+    // 35~42마디
+    const sec_35_42 = "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4) // D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
+
+    // 43~71마디
+    const sec_43_71 = "A3&F#3&D3(2) / A3&F#3&D3(2) // A3&G3&E3(2) / A3&G3&E3(2) // A3&F#3(2) / A3&F#3(2) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) / A3&F#3&D3(4,Staccato) // A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) / A3&G3&E3(4,Staccato) // A3&F#3(4) / A3&F#3(4) / A3&F#3(4) / A3&F#3(4) // A3&G3(4) / A3&F#3(8) ~ A3&F#3(4) / A3&E3(4) // D4&B3&G3(2) / D4&B3&G3(2) // D4&C4&A4(2) / D4&C4&A3(2) // D4&B3(2) // D4&B3(2) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) / D4&B3&G3(4,Staccato) // D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) / D4&C4&A3(4,Staccato) // D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) / D4&B3(4,Staccato) // D4&C4(4) / D4&B3(8) ~ D4&B3(4) / D4&A3(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D2(4) / A2(4) / D3(4) / E3(4) // E2(4) / B2(4) / E3(4) / G3(4) // F#2(4) / D3(4) / F#3(4) / A3(4) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // A2&A1(2) / C4&A3&E3(2) // G2&G1(2) / D4&B3&G3(2) // F#2&F#1(2) / E4&C4&F#3(2) // B2&B1(2) / D4&B3&F#3(2) // E2&E1(2) / D4&B3&G#3(2) // G2&G1(2) / D4&B3&G3(2) // A2&A1(2) / E4&A3&G3(2) // A2&A1(2) / C#4&A3&G3(2)";
+
+    // 72~79마디 (패턴 A x 2회)
+    let m_72_79 = [];
+    for(let i=0; i<2; i++) m_72_79.push(buildPattern(patternA_Measures));
+    const sec_72_79 = m_72_79.join(' // ');
+
+    // 80~84마디
+    const sec_80_84 = buildPattern(patternB_Measures.slice(0, 4));
+
+    // 85~86마디
+    const sec_85_86 = sec_33_34;
+
+    // 87~98마디
+    const sec_87_98 = sec_35_42 + " // " + "D3(4) / A3(4) / E4(4) / A3(4) // B2(4) / E#3(4) / B3(4) / E#3(4) // F2(4) / D3(4) / F3(4) / D3(4) // A2(4) / E3(4) / A3(4) / E3(4)";
+
+    // 99~101마디
+    const sec_99_101 = "D3(4) / A3(4) / D4(2) // G3&G2(4) / F#3&F#2(8) ~ F#3&F#2(4) / E3&E2(4) // D3&D2(1)";
+
+    // 전체 악보 텍스트 결합
+    const fullScoreText = [
+      sec_1_16, sec_17_24, sec_25_32, sec_33_34, sec_35_42,
+      sec_43_71, sec_72_79, sec_80_84, sec_85_86, sec_87_98, sec_99_101
+    ].join(' // ');
+
+    // --- 커스텀 악보 파서 엔진 ---
+    function parseCustomScore(scoreText) {
+      const measures = scoreText.split('//');
+      let events = [];
+      let currentMeasure = 0;
+
+      measures.forEach(mText => {
+        const notesRaw = mText.split('/');
+        let currentBeatInMeasure = 0; // 마디 내 박자 누적 (4분음표 1.0 기준)
+
+        notesRaw.forEach(nRaw => {
+          let str = nRaw.trim();
+          if (!str) return;
+
+          let isTied = false;
+          if (str.startsWith('~')) {
+            isTied = true;
+            str = str.substring(1).trim();
+          }
+
+          // 음계와 박자 괄호 분리
+          const match = str.match(/^([^\(]+)\(([^\)]+)\)$/);
+          if (!match) return;
+
+          const noteNameRaw = match[1].trim();
+          const attrStr = match[2].trim();
+          const attrs = attrStr.split(',').map(s => s.trim());
+          const durationVal = attrs[0]; // 1, 2, 4, 8
+          const isStaccato = attrs.includes('Staccato');
+
+          // 박자 변환
+          let durUnits = 1.0; // 4분음표 기준 박자 단위
+          if (durationVal === '1') durUnits = 4.0;
+          if (durationVal === '2') durUnits = 2.0;
+          if (durationVal === '4') durUnits = 1.0;
+          if (durationVal === '8') durUnits = 0.5;
+
+          // Tone.js 위치 계산 (마디 : 쿼터비트 : 16분비트)
+          const beatInt = Math.floor(currentBeatInMeasure);
+          const beatRem = currentBeatInMeasure - beatInt;
+          const sixteenth = Math.round(beatRem * 4);
+          const timePosition = `${currentMeasure}:${beatInt}:${sixteenth}`;
+
+          // 음표 지정 (& 처리)
+          let noteArray = [];
+          if (noteNameRaw.startsWith('^')) {
+            // 쉼표 처리
+            noteArray = [];
+          } else {
+            noteArray = noteNameRaw.split('&').map(s => s.trim());
+          }
+
+          // 연주 지속시간 (스타카토는 원래 길이의 50%)
+          let playDuration = durUnits * 0.5; // 기본 8n급
+          if (durationVal === '1') playDuration = "1m";
+          else if (durationVal === '2') playDuration = isStaccato ? "4n" : "2n";
+          else if (durationVal === '4') playDuration = isStaccato ? "8n" : "4n";
+          else if (durationVal === '8') playDuration = isStaccato ? "16n" : "8n";
+
+          if (noteArray.length > 0 && !isTied) {
+            events.push({
+              time: timePosition,
+              notes: noteArray,
+              duration: playDuration
+            });
+          }
+
+          currentBeatInMeasure += durUnits;
+        });
+
+        currentMeasure++;
+      });
+
+      return events;
+    }
+
+    const parsedEvents = parseCustomScore(fullScoreText);
+
+    // Tone.Part 등록
+    const part = new Tone.Part((time, event) => {
+      synth.triggerAttackRelease(event.notes, event.duration, time, 0.7);
+    }, parsedEvents);
+
+    part.loop = false;
+    Tone.Transport.bpm.value = 112; // Summer 원곡 템포
+
+    // 컨트롤 및 제어
     let isPlaying = false;
     const playBtn = document.getElementById("playBtn");
     const volumeSlider = document.getElementById("volumeSlider");
-    const bars = document.querySelectorAll(".bar");
 
     volumeSlider.addEventListener("input", (e) => {
       const val = parseFloat(e.target.value);
@@ -236,31 +244,6 @@
       }
     });
 
-    function animateVisualizer() {
-      if (!isPlaying) {
-        bars.forEach(bar => bar.style.height = "8px");
-        return;
-      }
-      bars.forEach(bar => {
-        const randomHeight = Math.floor(Math.random() * 32) + 8;
-        bar.style.height = randomHeight + "px";
-      });
-      setTimeout(animateVisualizer, 100);
-    }
-
-    const score = [
-      ...rightHand.map(e => ({ ...e, velocity: 0.9 })),
-      ...leftHand.map(e => ({ ...e, velocity: 0.5 }))
-    ];
-
-    const part = new Tone.Part((time, event) => {
-      synth.triggerAttackRelease(event.note, event.duration, time, event.velocity);
-    }, score);
-
-    // 짧은 반복 없이 곡 전체(20마디) 재생
-    part.loop = false;
-    Tone.Transport.bpm.value = 110; 
-
     playBtn.addEventListener("click", async () => {
       await Tone.start();
 
@@ -269,7 +252,6 @@
         part.start(0);
         isPlaying = true;
         playBtn.innerText = "❚❚ 일시정지";
-        animateVisualizer();
       } else {
         Tone.Transport.stop();
         isPlaying = false;
